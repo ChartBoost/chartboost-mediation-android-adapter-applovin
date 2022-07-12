@@ -1,2 +1,2 @@
-# helium-android-adapter-applovin
+# helium-android-adapter-applovinadapter
 Helium Android SDK AppLovin adapter
