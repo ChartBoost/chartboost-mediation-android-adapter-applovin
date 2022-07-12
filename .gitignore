@@ -2,5 +2,5 @@
 .idea/
 .DS_Store
 local.properties
-AdColonyAdapter/build
+AppLovinAdapter/build
 
