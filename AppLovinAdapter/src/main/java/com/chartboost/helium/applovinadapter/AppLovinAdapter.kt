@@ -3,7 +3,6 @@ package com.chartboost.helium.applovinadapter
 import android.content.Context
 import android.util.DisplayMetrics
 import android.util.Size
-import android.view.View
 import android.view.View.GONE
 import com.applovin.adview.*
 import com.applovin.sdk.*
@@ -14,6 +13,9 @@ import com.chartboost.heliumsdk.utils.LogController
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+/**
+ * The Helium AppLovin SDK adapter.
+ */
 class AppLovinAdapter : PartnerAdapter {
     companion object {
         /**
@@ -22,7 +24,7 @@ class AppLovinAdapter : PartnerAdapter {
         private const val TAG = "[AppLovinAdapter]"
     }
 
-    // AppLovin has a different way of handling its SDK
+    // The AppLovin SDK needs an instance that is later passed on its ad cycle methods.
     private var appLovinSdk: AppLovinSdk? = null
 
     /**
@@ -68,10 +70,8 @@ class AppLovinAdapter : PartnerAdapter {
         context: Context,
         partnerConfiguration: PartnerConfiguration
     ): Result<Unit> {
-
         return suspendCoroutine { continuation ->
             partnerConfiguration.credentials["sdk_key"]?.let { appId ->
-
                 appLovinSdk = AppLovinSdk.getInstance(
                     appId,
                     AppLovinSdkSettings(context.applicationContext),
@@ -80,10 +80,10 @@ class AppLovinAdapter : PartnerAdapter {
                     sdk.initializeSdk {
                         sdk.mediationProvider = "Helium"
                         sdk.setPluginVersion(VERSION_NAME)
-                        Result.success(Unit)
+                        LogController.i("$TAG AppLovin SDK Successfully Initialized.")
+                        continuation.resume(Result.success(Unit))
                     }
                 }
-
             } ?: run {
                 LogController.e("Failed to create AppLovin SDK")
                 continuation.resume(Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED)))
@@ -92,33 +92,33 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Save the current GDPR applicability state for later use.
-     *
-     * @param gdprApplies The current GDPR applicability state.
+     * AppLovin does not have a public method as to whether GDPR applies. No action required.
      */
-    override fun setGdprApplies(gdprApplies: Boolean) {}
+    override fun setGdprApplies(gdprApplies: Boolean) {
+        // NO-OP
+    }
 
     /**
-     * Get whether to allow personalized ads based on the user's GDPR consent status.
+     * Notify AppLovin of user GDPR consent.
      *
      * @param gdprConsentStatus The user's current GDPR consent status.
      */
     override fun setGdprConsentStatus(gdprConsentStatus: GdprConsentStatus) {
-        val consentStatus = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
-        AppLovinPrivacySettings.setHasUserConsent(consentStatus, HeliumSdk.getContext())
+        val consentGiven = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
+        AppLovinPrivacySettings.setHasUserConsent(consentGiven, HeliumSdk.getContext())
     }
 
     /**
-     * Save the current CCPA privacy String to be used later.
+     * Notify AppLovin of the CCPA compliance.
      *
      * @param privacyString The CCPA privacy String.
      */
     override fun setCcpaPrivacyString(privacyString: String?) {
-        val hasGivenCcpaConsent = privacyString?.length?.let {
+        val doNotSell = privacyString?.length?.let {
             it.takeIf { it > 2 }?.let {
                 when (privacyString[2]) {
-                    'Y' -> false // The user opts out of the sale of personal data, which means they did not consent.
-                    'N' -> true // The user opts in to the sale of personal data, which means they consent.
+                    'Y' -> true // The user opts out of the sale of personal data, which means they did not consent.
+                    'N' -> false // The user opts in to the sale of personal data, which means they consent.
                     else -> {
                         // CCPA does not apply
                         return
@@ -127,7 +127,7 @@ class AppLovinAdapter : PartnerAdapter {
             } ?: return
         } ?: return
 
-        AppLovinPrivacySettings.setDoNotSell(!hasGivenCcpaConsent, HeliumSdk.getContext())
+        AppLovinPrivacySettings.setDoNotSell(doNotSell, HeliumSdk.getContext())
     }
 
     /**
@@ -170,17 +170,12 @@ class AppLovinAdapter : PartnerAdapter {
             return Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_ERROR))
         }
 
+        // Save listener for later usage.
+        listeners[request.heliumPlacement] = partnerAdListener
+
         return when (request.format) {
-            AdFormat.INTERSTITIAL -> {
-                // Save listener for later usage.
-                listeners[request.heliumPlacement] = partnerAdListener
-                loadInterstitial(request)
-            }
-            AdFormat.REWARDED -> {
-                // Save listener for later usage.
-                listeners[request.heliumPlacement] = partnerAdListener
-                loadRewarded(request)
-            }
+            AdFormat.INTERSTITIAL -> loadInterstitial(request)
+            AdFormat.REWARDED -> loadRewarded(request)
             AdFormat.BANNER -> loadBanner(
                 request,
                 context,
@@ -205,9 +200,7 @@ class AppLovinAdapter : PartnerAdapter {
                 // Banner ads don't have their own show.
                 Result.success(partnerAd)
             }
-            AdFormat.INTERSTITIAL -> {
-                showInterstitialAd(partnerAd, heliumListener)
-            }
+            AdFormat.INTERSTITIAL -> showInterstitialAd(partnerAd, heliumListener)
             AdFormat.REWARDED -> showRewardedAd(context, partnerAd, heliumListener)
         }
     }
@@ -265,9 +258,9 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
                 override fun failedToReceiveAd(errorCode: Int) {
-                    LogController.d("$TAG Banner ad failedToReceiveAd for zone $errorCode")
+                    LogController.d("$TAG Banner ad failedToReceiveAd $errorCode")
                     continuation.resume(
-                        Result.failure(HeliumAdException(HeliumErrorCode.NO_FILL))
+                        Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
                     )
                 }
             }
@@ -279,9 +272,9 @@ class AppLovinAdapter : PartnerAdapter {
                 override fun adFailedToDisplay(
                     ad: AppLovinAd,
                     adView: AppLovinAdView,
-                    code: AppLovinAdViewDisplayErrorCode
+                    errorCode: AppLovinAdViewDisplayErrorCode
                 ) {
-                    LogController.d("$TAG Banner adFailedToDisplay for zone $code")
+                    LogController.d("$TAG Banner AppLovinAdViewDisplayErrorCode $errorCode")
                 }
             })
 
@@ -316,6 +309,7 @@ class AppLovinAdapter : PartnerAdapter {
      * @return The AppLovin ad size that best matches the given [Size].
      */
     private fun getAppLovinAdSize(size: Size?) = when (size?.height) {
+        // TO-DO: An updated version of this method will later be updated.
         in 50 until 90 -> AppLovinAdSize.BANNER
         in 90 until 250 -> AppLovinAdSize.LEADER
         in 250 until DisplayMetrics().heightPixels -> AppLovinAdSize.MREC
@@ -323,7 +317,7 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Attempt to load an AppLovin interstitial on the main thread.
+     * Attempt to load an AppLovin interstitial ad.
      *
      * @param request An [AdLoadRequest] instance containing data to load the ad with.
      */
@@ -356,7 +350,7 @@ class AppLovinAdapter : PartnerAdapter {
                     override fun failedToReceiveAd(errorCode: Int) {
                         LogController.d("$TAG interstitial failedToReceiveAd $errorCode")
                         continuation.resume(
-                            Result.failure(HeliumAdException(HeliumErrorCode.NO_FILL))
+                            Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
                         )
                     }
                 }
@@ -365,7 +359,7 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Attempt to load an AppLovin rewarded ad on the main thread.
+     * Attempt to load an AppLovin rewarded ad.
      *
      * @param request The [AdLoadRequest] containing relevant data for the current ad load call.
      *
@@ -392,7 +386,7 @@ class AppLovinAdapter : PartnerAdapter {
                 override fun failedToReceiveAd(errorCode: Int) {
                     LogController.d("$TAG rewarded failedToReceiveAd $errorCode")
                     continuation.resume(
-                        Result.failure(HeliumAdException(HeliumErrorCode.NO_FILL))
+                        Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
                     )
                 }
             })
@@ -400,7 +394,7 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Attempt to show an AppLovin interstitial ad on the main thread.
+     * Attempt to show an AppLovin interstitial ad.
      *
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
      * @param heliumListener A [PartnerAdListener] to notify Helium of ad events.
@@ -413,10 +407,10 @@ class AppLovinAdapter : PartnerAdapter {
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
             (partnerAd.ad as? AppLovinAd)?.let {
-                val appLovinInterstitialAdDialog =
+                val interstitialAd =
                     AppLovinInterstitialAd.create(appLovinSdk, HeliumSdk.getContext())
 
-                appLovinInterstitialAdDialog.setAdDisplayListener(object :
+                interstitialAd.setAdDisplayListener(object :
                     AppLovinAdDisplayListener {
                     override fun adDisplayed(ad: AppLovinAd?) {
                         heliumListener?.onPartnerAdImpression(partnerAd) ?: LogController.d(
@@ -432,14 +426,14 @@ class AppLovinAdapter : PartnerAdapter {
                     }
                 })
 
-                appLovinInterstitialAdDialog.setAdClickListener {
+                interstitialAd.setAdClickListener {
                     heliumListener?.onPartnerAdClicked(partnerAd) ?: LogController.d(
                         "$TAG Unable to fire onPartnerAdClicked for AppLovin adapter."
                     )
                     continuation.resume(Result.success(partnerAd))
                 }
 
-                appLovinInterstitialAdDialog.showAndRender(it)
+                interstitialAd.showAndRender(it)
             }
         } ?: run {
             LogController.w("$TAG Failed to show AppLovin interstitial ad. Ad is null.")
@@ -448,7 +442,7 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Attempt to show an AppLovin rewarded ad on the main thread.
+     * Attempt to show an AppLovin rewarded ad.
      *
      * @param context The current [Context].
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
@@ -462,7 +456,7 @@ class AppLovinAdapter : PartnerAdapter {
         heliumListener: PartnerAdListener?
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
-            val rewarded = AppLovinIncentivizedInterstitial.create(appLovinSdk)
+            val rewardedAd = AppLovinIncentivizedInterstitial.create(appLovinSdk)
 
             val adRewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
                 override fun userRewardVerified(appLovinAd: AppLovinAd, map: Map<String, String>) {
@@ -527,7 +521,7 @@ class AppLovinAdapter : PartnerAdapter {
                     )
                 }
 
-            rewarded.show(
+            rewardedAd.show(
                 partnerAd.ad as AppLovinAd,
                 context,
                 adRewardListener,

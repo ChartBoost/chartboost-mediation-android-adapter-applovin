@@ -50,13 +50,13 @@ android {
 
 dependencies {
     // For internal usage, please use local pathing to get development features.
-    // Ensure that the Helium repo is a sibling of your `helium-android-adapter-applovinadapter` dir.
+    // Ensure that the Helium repo is a sibling of your `helium-android-adapter-applovin` dir.
     // The AAR file must also be available.
     implementation (name:'Helium-debug', ext: 'aar')
 
     // For external usage, please use the following production dependency.
     // You may choose a different release version.
-    // implementation 'com.chartboost:helium:2.10.0'
+    // implementation 'com.chartboost:helium:3.0.0'
 
     //Partner SDK
     implementation 'com.applovin:applovin-sdk:11.3.1'
