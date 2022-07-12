@@ -24,7 +24,9 @@ class AppLovinAdapter : PartnerAdapter {
         private const val TAG = "[AppLovinAdapter]"
     }
 
-    // The AppLovin SDK needs an instance that is later passed on its ad cycle methods.
+    /**
+     * The AppLovin SDK needs an instance that is later passed on its ad lifecycle methods.
+     */
     private var appLovinSdk: AppLovinSdk? = null
 
     /**
@@ -80,7 +82,7 @@ class AppLovinAdapter : PartnerAdapter {
                     sdk.initializeSdk {
                         sdk.mediationProvider = "Helium"
                         sdk.setPluginVersion(VERSION_NAME)
-                        LogController.i("$TAG AppLovin SDK Successfully Initialized.")
+                        LogController.i("$TAG AppLovin SDK successfully initialized.")
                         continuation.resume(Result.success(Unit))
                     }
                 }
@@ -170,12 +172,9 @@ class AppLovinAdapter : PartnerAdapter {
             return Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_ERROR))
         }
 
-        // Save listener for later usage.
-        listeners[request.heliumPlacement] = partnerAdListener
-
         return when (request.format) {
-            AdFormat.INTERSTITIAL -> loadInterstitial(request)
-            AdFormat.REWARDED -> loadRewarded(request)
+            AdFormat.INTERSTITIAL -> loadInterstitial(request, partnerAdListener)
+            AdFormat.REWARDED -> loadRewarded(request, partnerAdListener)
             AdFormat.BANNER -> loadBanner(
                 request,
                 context,
@@ -282,7 +281,7 @@ class AppLovinAdapter : PartnerAdapter {
                 partnerAdListener.onPartnerAdClicked(
                     PartnerAd(
                         ad = ad,
-                        inlineView = null,
+                        inlineView = appLovinAdView,
                         details = emptyMap(),
                         request = request
                     )
@@ -321,7 +320,13 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @param request An [AdLoadRequest] instance containing data to load the ad with.
      */
-    private suspend fun loadInterstitial(request: AdLoadRequest): Result<PartnerAd> {
+    private suspend fun loadInterstitial(
+        request: AdLoadRequest,
+        partnerAdListener: PartnerAdListener
+    ): Result<PartnerAd> {
+        // Save listener for later usage.
+        listeners[request.heliumPlacement] = partnerAdListener
+
         // Let's check the AppLovin instance.
         val alSdkInstance = appLovinSdk
 
@@ -365,8 +370,14 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
-    private suspend fun loadRewarded(request: AdLoadRequest): Result<PartnerAd> {
+    private suspend fun loadRewarded(
+        request: AdLoadRequest,
+        partnerAdListener: PartnerAdListener
+    ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
+            // Save listener for later usage.
+            listeners[request.heliumPlacement] = partnerAdListener
+
             val rewardedAd =
                 AppLovinIncentivizedInterstitial.create(request.partnerPlacement, appLovinSdk)
             rewardedAd.preload(object : AppLovinAdLoadListener {
@@ -513,7 +524,6 @@ class AppLovinAdapter : PartnerAdapter {
                 }
             }
 
-            // Ad Click Listener
             val adClickListener =
                 AppLovinAdClickListener {
                     heliumListener?.onPartnerAdClicked(partnerAd) ?: LogController.d(
