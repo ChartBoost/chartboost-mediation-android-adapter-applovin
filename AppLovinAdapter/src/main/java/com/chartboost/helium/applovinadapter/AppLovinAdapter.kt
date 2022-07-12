@@ -76,9 +76,7 @@ class AppLovinAdapter : PartnerAdapter {
                     appId,
                     AppLovinSdkSettings(context.applicationContext),
                     context.applicationContext
-                )
-
-                appLovinSdk?.let { sdk ->
+                ).also { sdk ->
                     sdk.initializeSdk {
                         sdk.mediationProvider = "Helium"
                         sdk.setPluginVersion(VERSION_NAME)
@@ -267,6 +265,7 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
                 override fun failedToReceiveAd(errorCode: Int) {
+                    LogController.d("$TAG Banner ad failedToReceiveAd for zone $errorCode")
                     continuation.resume(
                         Result.failure(HeliumAdException(HeliumErrorCode.NO_FILL))
                     )
@@ -282,7 +281,7 @@ class AppLovinAdapter : PartnerAdapter {
                     adView: AppLovinAdView,
                     code: AppLovinAdViewDisplayErrorCode
                 ) {
-                    LogController.e("$TAG Banner adFailedToDisplay for zone $code")
+                    LogController.d("$TAG Banner adFailedToDisplay for zone $code")
                 }
             })
 
@@ -355,7 +354,7 @@ class AppLovinAdapter : PartnerAdapter {
                     }
 
                     override fun failedToReceiveAd(errorCode: Int) {
-                        LogController.w("$TAG interstitial failedToReceiveAd $errorCode")
+                        LogController.d("$TAG interstitial failedToReceiveAd $errorCode")
                         continuation.resume(
                             Result.failure(HeliumAdException(HeliumErrorCode.NO_FILL))
                         )
@@ -391,7 +390,7 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
                 override fun failedToReceiveAd(errorCode: Int) {
-                    LogController.w("$TAG rewarded failedToReceiveAd $errorCode")
+                    LogController.d("$TAG rewarded failedToReceiveAd $errorCode")
                     continuation.resume(
                         Result.failure(HeliumAdException(HeliumErrorCode.NO_FILL))
                     )
@@ -413,7 +412,7 @@ class AppLovinAdapter : PartnerAdapter {
         heliumListener: PartnerAdListener?
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
-            (partnerAd.ad as? AppLovinAd).let {
+            (partnerAd.ad as? AppLovinAd)?.let {
                 val appLovinInterstitialAdDialog =
                     AppLovinInterstitialAd.create(appLovinSdk, HeliumSdk.getContext())
 
@@ -443,7 +442,7 @@ class AppLovinAdapter : PartnerAdapter {
                 appLovinInterstitialAdDialog.showAndRender(it)
             }
         } ?: run {
-            LogController.e("$TAG Failed to show AppLovin interstitial ad. Ad is null.")
+            LogController.w("$TAG Failed to show AppLovin interstitial ad. Ad is null.")
             Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
         }
     }
@@ -485,7 +484,7 @@ class AppLovinAdapter : PartnerAdapter {
                 override fun userRewardRejected(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
 
                 override fun validationRequestFailed(appLovinAd: AppLovinAd, responseCode: Int) {
-                    LogController.e("$TAG Failed to show AppLovin rewarded ad. Error: $responseCode")
+                    LogController.d("$TAG Failed to show AppLovin rewarded ad. Error: $responseCode")
                     continuation.resume(
                         Result.failure(HeliumAdException(getHeliumErrorCode(responseCode)))
                     )
@@ -537,7 +536,7 @@ class AppLovinAdapter : PartnerAdapter {
                 adClickListener
             )
         } ?: run {
-            LogController.e("$TAG Failed to show AppLovin interstitial ad. Ad is null.")
+            LogController.w("$TAG Failed to show AppLovin interstitial ad. Ad is null.")
             Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
         }
     }
@@ -556,11 +555,11 @@ class AppLovinAdapter : PartnerAdapter {
                 it.destroy()
                 Result.success(partnerAd)
             } else {
-                LogController.e("$TAG Failed to destroy AppLovin banner ad. Ad is not an AppLovinAdView.")
+                LogController.w("$TAG Failed to destroy AppLovin banner ad. Ad is not an AppLovinAdView.")
                 Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
             }
         } ?: run {
-            LogController.e("$TAG Failed to destroy AppLovin banner ad. Ad is null.")
+            LogController.w("$TAG Failed to destroy AppLovin banner ad. Ad is null.")
             Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
         }
     }
