@@ -223,7 +223,7 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Attempt to load an AppLovin banner on the main thread.
+     * Attempt to load an AppLovin banner ad.
      *
      * @param context The current [Context].
      * @param request An [AdLoadRequest] instance containing relevant data for the current ad load call.
@@ -367,9 +367,9 @@ class AppLovinAdapter : PartnerAdapter {
      */
     private suspend fun loadRewarded(request: AdLoadRequest): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
-            val rewarded =
+            val rewardedAd =
                 AppLovinIncentivizedInterstitial.create(request.partnerPlacement, appLovinSdk)
-            rewarded.preload(object : AppLovinAdLoadListener {
+            rewardedAd.preload(object : AppLovinAdLoadListener {
                 override fun adReceived(ad: AppLovinAd?) {
                     continuation.resume(
                         Result.success(
