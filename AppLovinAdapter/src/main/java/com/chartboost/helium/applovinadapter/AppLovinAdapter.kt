@@ -483,16 +483,10 @@ class AppLovinAdapter : PartnerAdapter {
 
             val adRewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
                 override fun userRewardVerified(appLovinAd: AppLovinAd, map: Map<String, String>) {
-                    map["amount"]?.let { amount ->
-                        Reward(
-                            amount.toInt(), map["currency"].toString()
-                        )
-                    }?.let { reward ->
-                        heliumListener?.onPartnerAdRewarded(
-                            partnerAd,
-                            reward
-                        )
-                    } ?: LogController.d(
+                    heliumListener?.onPartnerAdRewarded(
+                        partnerAd,
+                        Reward(map["amount"]?.toInt() ?: 0, map["currency"].toString())
+                    ) ?: LogController.d(
                         "$TAG Unable to fire onPartnerAdRewarded for AppLovin adapter."
                     )
                 }
