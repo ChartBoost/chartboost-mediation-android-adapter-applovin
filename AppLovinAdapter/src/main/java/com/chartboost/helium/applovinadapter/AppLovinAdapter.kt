@@ -7,7 +7,6 @@ import android.view.View.GONE
 import com.applovin.adview.*
 import com.applovin.sdk.*
 import com.chartboost.helium.applovinadapter.BuildConfig.VERSION_NAME
-import com.chartboost.heliumsdk.HeliumSdk
 import com.chartboost.heliumsdk.domain.*
 import com.chartboost.heliumsdk.utils.LogController
 import kotlin.coroutines.resume
@@ -28,6 +27,11 @@ class AppLovinAdapter : PartnerAdapter {
      * The AppLovin SDK needs an instance that is later passed to its ad lifecycle methods.
      */
     private var appLovinSdk: AppLovinSdk? = null
+
+    /**
+     * The AppLovin SDK needs a context for of its privacy methods.
+     */
+    private var heliumSdkApplicationContext: Context? = null
 
     /**
      * A map of Helium's listeners for the corresponding Helium placements.
@@ -76,21 +80,28 @@ class AppLovinAdapter : PartnerAdapter {
     ): Result<Unit> {
         return suspendCoroutine { continuation ->
             partnerConfiguration.credentials["sdk_key"]?.let { appId ->
-                appLovinSdk = AppLovinSdk.getInstance(
-                    appId,
-                    AppLovinSdkSettings(context.applicationContext),
-                    context.applicationContext
-                ).also { sdk ->
-                    sdk.initializeSdk {
-                        sdk.mediationProvider = "Helium"
-                        sdk.setPluginVersion(VERSION_NAME)
-                        continuation.resume(
-                            Result.success(
-                                LogController.i("$TAG AppLovin SDK successfully initialized.")
+
+                // Save the application context for later usage.
+                heliumSdkApplicationContext = context.applicationContext
+
+                heliumSdkApplicationContext?.let {
+                    appLovinSdk = AppLovinSdk.getInstance(
+                        appId,
+                        AppLovinSdkSettings(it),
+                        it
+                    ).also { sdk ->
+                        sdk.initializeSdk {
+                            sdk.mediationProvider = "Helium"
+                            sdk.setPluginVersion(VERSION_NAME)
+                            continuation.resume(
+                                Result.success(
+                                    LogController.i("$TAG AppLovin SDK successfully initialized.")
+                                )
                             )
-                        )
+                        }
                     }
                 }
+
             } ?: run {
                 LogController.e("Failed to create AppLovin SDK")
                 continuation.resume(Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED)))
@@ -112,7 +123,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override fun setGdprConsentStatus(gdprConsentStatus: GdprConsentStatus) {
         val consentGiven = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
-        HeliumSdk.getContext()?.let {
+        heliumSdkApplicationContext?.let {
             AppLovinPrivacySettings.setHasUserConsent(consentGiven, it)
         }
     }
@@ -136,7 +147,7 @@ class AppLovinAdapter : PartnerAdapter {
             } ?: return
         } ?: return
 
-        HeliumSdk.getContext()?.let {
+        heliumSdkApplicationContext?.let {
             AppLovinPrivacySettings.setDoNotSell(doNotSell, it)
         }
     }
@@ -145,7 +156,7 @@ class AppLovinAdapter : PartnerAdapter {
      * Notify AppLovin of the COPPA subjectivity.
      */
     override fun setUserSubjectToCoppa(isSubjectToCoppa: Boolean) {
-        HeliumSdk.getContext()?.let {
+        heliumSdkApplicationContext?.let {
             AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, it)
         }
     }
@@ -204,7 +215,7 @@ class AppLovinAdapter : PartnerAdapter {
                 // Banner ads don't have their own show.
                 Result.success(partnerAd)
             }
-            AdFormat.INTERSTITIAL -> showInterstitialAd(partnerAd, heliumListener)
+            AdFormat.INTERSTITIAL -> showInterstitialAd(context, partnerAd, heliumListener)
             AdFormat.REWARDED -> showRewardedAd(context, partnerAd, heliumListener)
         }
     }
@@ -420,19 +431,21 @@ class AppLovinAdapter : PartnerAdapter {
     /**
      * Attempt to show an AppLovin interstitial ad.
      *
+     * @param context The current [Context].
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
      * @param heliumListener A [PartnerAdListener] to notify Helium of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully shown, Result.failure(Exception) otherwise.
      */
     private suspend fun showInterstitialAd(
+        context: Context,
         partnerAd: PartnerAd,
         heliumListener: PartnerAdListener?
     ): Result<PartnerAd> {
-        return suspendCoroutine { continuation ->
-            (partnerAd.ad as? AppLovinAd)?.let {
+        return (partnerAd.ad as? AppLovinAd)?.let {
+            suspendCoroutine { continuation ->
                 val interstitialAd =
-                    AppLovinInterstitialAd.create(appLovinSdk, HeliumSdk.getContext())
+                    AppLovinInterstitialAd.create(appLovinSdk, context)
 
                 interstitialAd.setAdDisplayListener(object :
                     AppLovinAdDisplayListener {
