@@ -25,7 +25,7 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * The AppLovin SDK needs an instance that is later passed on its ad lifecycle methods.
+     * The AppLovin SDK needs an instance that is later passed to its ad lifecycle methods.
      */
     private var appLovinSdk: AppLovinSdk? = null
 
@@ -84,8 +84,11 @@ class AppLovinAdapter : PartnerAdapter {
                     sdk.initializeSdk {
                         sdk.mediationProvider = "Helium"
                         sdk.setPluginVersion(VERSION_NAME)
-                        LogController.i("$TAG AppLovin SDK successfully initialized.")
-                        continuation.resume(Result.success(Unit))
+                        continuation.resume(
+                            Result.success(
+                                LogController.i("$TAG AppLovin SDK successfully initialized.")
+                            )
+                        )
                     }
                 }
             } ?: run {
@@ -123,8 +126,8 @@ class AppLovinAdapter : PartnerAdapter {
         val doNotSell = privacyString?.length?.let {
             it.takeIf { it > 2 }?.let {
                 when (privacyString[2]) {
-                    'Y' -> true // The user opts out of the sale of personal data, which means they did not consent.
-                    'N' -> false // The user opts in to the sale of personal data, which means they consent.
+                    'Y' -> true // The user opts out of the sale of personal data.
+                    'N' -> false // The user opts in to the sale of personal data.
                     else -> {
                         // CCPA does not apply
                         return
