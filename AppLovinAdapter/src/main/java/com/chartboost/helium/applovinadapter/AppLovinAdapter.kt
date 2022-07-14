@@ -29,7 +29,7 @@ class AppLovinAdapter : PartnerAdapter {
     private var appLovinSdk: AppLovinSdk? = null
 
     /**
-     * The AppLovin SDK needs a context for of its privacy methods.
+     * The AppLovin SDK needs a context for its privacy methods.
      */
     private var heliumSdkApplicationContext: Context? = null
 
@@ -80,11 +80,10 @@ class AppLovinAdapter : PartnerAdapter {
     ): Result<Unit> {
         return suspendCoroutine { continuation ->
             partnerConfiguration.credentials["sdk_key"]?.let { appId ->
+                context.applicationContext?.let {
+                    // Save the application context for later usage.
+                    heliumSdkApplicationContext = it
 
-                // Save the application context for later usage.
-                heliumSdkApplicationContext = context.applicationContext
-
-                heliumSdkApplicationContext?.let {
                     appLovinSdk = AppLovinSdk.getInstance(
                         appId,
                         AppLovinSdkSettings(it),
