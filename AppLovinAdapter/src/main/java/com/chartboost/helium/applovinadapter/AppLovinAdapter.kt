@@ -521,13 +521,15 @@ class AppLovinAdapter : PartnerAdapter {
                         appLovinAd: AppLovinAd,
                         percentViewed: Double,
                         fullyWatched: Boolean
-                    ) {}
+                    ) {
+                        TODO("HB-4119: Need to check if we need to add logic here for rewards.")
+                    }
                 }
 
             val displayListener: AppLovinAdDisplayListener = object : AppLovinAdDisplayListener {
                 override fun adDisplayed(appLovinAd: AppLovinAd) {
-                    //We may need to check if the impression is recorded here.
                     continuation.resume(Result.success(partnerAd))
+                    TODO("HB-4119: We may need to check if the impression is recorded here.")
                 }
 
                 override fun adHidden(appLovinAd: AppLovinAd) {
@@ -593,6 +595,8 @@ class AppLovinAdapter : PartnerAdapter {
             AppLovinErrorCodes.NO_FILL -> HeliumErrorCode.NO_FILL
             AppLovinErrorCodes.NO_NETWORK -> HeliumErrorCode.NO_CONNECTIVITY
             AppLovinErrorCodes.SDK_DISABLED -> HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED
+            // AppLovin is currently not part of programmatic bidding with Helium. Only waterfall.
+            AppLovinErrorCodes.INVALID_AD_TOKEN -> HeliumErrorCode.INVALID_BID_PAYLOAD
             // AppLovin error codes that need to be properly mapped. Currently mapped to PARTNER_ERROR.
             AppLovinErrorCodes.UNABLE_TO_RENDER_AD,
             AppLovinErrorCodes.INVALID_ZONE,
@@ -603,7 +607,6 @@ class AppLovinAdapter : PartnerAdapter {
             AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES,
             AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES,
             AppLovinErrorCodes.FETCH_AD_TIMEOUT,
-            AppLovinErrorCodes.INVALID_AD_TOKEN,
             AppLovinErrorCodes.INCENTIVIZED_UNKNOWN_SERVER_ERROR,
             AppLovinErrorCodes.INCENTIVIZED_SERVER_TIMEOUT,
             AppLovinErrorCodes.INCENTIVIZED_USER_CLOSED_VIDEO,
