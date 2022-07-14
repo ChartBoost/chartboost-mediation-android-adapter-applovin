@@ -187,7 +187,7 @@ class AppLovinAdapter : PartnerAdapter {
         request: AdLoadRequest,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
-         return when (request.format) {
+        return when (request.format) {
             AdFormat.INTERSTITIAL -> loadInterstitial(request, partnerAdListener)
             AdFormat.REWARDED -> loadRewarded(request, partnerAdListener)
             AdFormat.BANNER -> loadBanner(
@@ -593,7 +593,7 @@ class AppLovinAdapter : PartnerAdapter {
             AppLovinErrorCodes.NO_FILL -> HeliumErrorCode.NO_FILL
             AppLovinErrorCodes.NO_NETWORK -> HeliumErrorCode.NO_CONNECTIVITY
             AppLovinErrorCodes.SDK_DISABLED -> HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED
-            // AppLovin Error Codes that need to be properly mapped. Currently mapped to PARTNER_ERROR
+            // AppLovin error codes that need to be properly mapped. Currently mapped to PARTNER_ERROR.
             AppLovinErrorCodes.UNABLE_TO_RENDER_AD,
             AppLovinErrorCodes.INVALID_ZONE,
             AppLovinErrorCodes.UNSPECIFIED_ERROR,
@@ -601,14 +601,14 @@ class AppLovinAdapter : PartnerAdapter {
             AppLovinErrorCodes.INVALID_RESPONSE,
             AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES,
             AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES,
-            AppLovinErrorCodes. UNABLE_TO_PRECACHE_VIDEO_RESOURCES,
+            AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES,
             AppLovinErrorCodes.FETCH_AD_TIMEOUT,
             AppLovinErrorCodes.INVALID_AD_TOKEN,
             AppLovinErrorCodes.INCENTIVIZED_UNKNOWN_SERVER_ERROR,
             AppLovinErrorCodes.INCENTIVIZED_SERVER_TIMEOUT,
             AppLovinErrorCodes.INCENTIVIZED_USER_CLOSED_VIDEO,
-            AppLovinErrorCodes.INVALID_URL  -> HeliumErrorCode.PARTNER_ERROR
-            // In case of unknown AppLovinErrorCodes.
+            AppLovinErrorCodes.INVALID_URL -> HeliumErrorCode.PARTNER_ERROR
+            // In case of unknown AppLovin error codes.
             else -> HeliumErrorCode.INTERNAL
         }
     }
