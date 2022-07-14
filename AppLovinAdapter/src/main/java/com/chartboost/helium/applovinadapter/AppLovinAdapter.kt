@@ -31,7 +31,7 @@ class AppLovinAdapter : PartnerAdapter {
     /**
      * The AppLovin SDK needs a context for its privacy methods.
      */
-    private var heliumSdkApplicationContext: Context? = null
+    private var appContext: Context? = null
 
     /**
      * A map of Helium's listeners for the corresponding Helium placements.
@@ -79,13 +79,13 @@ class AppLovinAdapter : PartnerAdapter {
         partnerConfiguration: PartnerConfiguration
     ): Result<Unit> {
         return suspendCoroutine { continuation ->
-            partnerConfiguration.credentials["sdk_key"]?.let { appId ->
+            partnerConfiguration.credentials["sdk_key"]?.let { sdkKey ->
                 context.applicationContext?.let {
                     // Save the application context for later usage.
-                    heliumSdkApplicationContext = it
+                    appContext = it
 
                     appLovinSdk = AppLovinSdk.getInstance(
-                        appId,
+                        sdkKey,
                         AppLovinSdkSettings(it),
                         it
                     ).also { sdk ->
@@ -102,7 +102,7 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
             } ?: run {
-                LogController.e("Failed to create AppLovin SDK")
+                LogController.e("Failed to initialize AppLovin SDK.")
                 continuation.resume(Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED)))
             }
         }
@@ -122,7 +122,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override fun setGdprConsentStatus(gdprConsentStatus: GdprConsentStatus) {
         val consentGiven = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
-        heliumSdkApplicationContext?.let {
+        appContext?.let {
             AppLovinPrivacySettings.setHasUserConsent(consentGiven, it)
         }
     }
@@ -146,7 +146,7 @@ class AppLovinAdapter : PartnerAdapter {
             } ?: return
         } ?: return
 
-        heliumSdkApplicationContext?.let {
+        appContext?.let {
             AppLovinPrivacySettings.setDoNotSell(doNotSell, it)
         }
     }
@@ -155,7 +155,7 @@ class AppLovinAdapter : PartnerAdapter {
      * Notify AppLovin of the COPPA subjectivity.
      */
     override fun setUserSubjectToCoppa(isSubjectToCoppa: Boolean) {
-        heliumSdkApplicationContext?.let {
+        appContext?.let {
             AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, it)
         }
     }
@@ -210,10 +210,8 @@ class AppLovinAdapter : PartnerAdapter {
         val heliumListener = listeners.remove(partnerAd.request.heliumPlacement)
 
         return when (partnerAd.request.format) {
-            AdFormat.BANNER -> {
-                // Banner ads don't have their own show.
-                Result.success(partnerAd)
-            }
+            // Banner ads don't have their own show.
+            AdFormat.BANNER -> Result.success(partnerAd)
             AdFormat.INTERSTITIAL -> showInterstitialAd(context, partnerAd, heliumListener)
             AdFormat.REWARDED -> showRewardedAd(context, partnerAd, heliumListener)
         }
@@ -260,7 +258,7 @@ class AppLovinAdapter : PartnerAdapter {
                         context
                     )
 
-                val loadAdListener: AppLovinAdLoadListener = object : AppLovinAdLoadListener {
+                val listener: AppLovinAdLoadListener = object : AppLovinAdLoadListener {
                     override fun adReceived(ad: AppLovinAd) {
                         continuation.resume(
                             Result.success(
@@ -306,10 +304,10 @@ class AppLovinAdapter : PartnerAdapter {
                     )
                 }
 
-                it.adService.loadNextAdForZoneId(request.partnerPlacement, loadAdListener)
+                it.adService.loadNextAdForZoneId(request.partnerPlacement, listener)
 
             } ?: run {
-                LogController.w("Failed to load AppLovin ad, AppLovin SDK is null")
+                LogController.w("Failed to load AppLovin banner ad, AppLovin SDK is null")
                 continuation.resume(Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_ERROR)))
             }
         }
@@ -422,7 +420,7 @@ class AppLovinAdapter : PartnerAdapter {
                 })
             }
         } ?: run {
-            LogController.w("$TAG Failed to show AppLovin interstitial ad. Ad is null.")
+            LogController.w("$TAG Failed to show AppLovin rewarded ad. Ad is null.")
             Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
         }
     }
@@ -493,7 +491,7 @@ class AppLovinAdapter : PartnerAdapter {
         return suspendCoroutine { continuation ->
             val rewardedAd = AppLovinIncentivizedInterstitial.create(appLovinSdk)
 
-            val adRewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
+            val rewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
                 override fun userRewardVerified(appLovinAd: AppLovinAd, map: Map<String, String>) {
                     heliumListener?.onPartnerAdRewarded(
                         partnerAd,
@@ -511,7 +509,7 @@ class AppLovinAdapter : PartnerAdapter {
                 }
             }
 
-            val adVideoPlaybackListener: AppLovinAdVideoPlaybackListener =
+            val playbackListener: AppLovinAdVideoPlaybackListener =
                 object : AppLovinAdVideoPlaybackListener {
                     override fun videoPlaybackBegan(appLovinAd: AppLovinAd) {
                         heliumListener?.onPartnerAdImpression(partnerAd) ?: LogController.d(
@@ -526,7 +524,7 @@ class AppLovinAdapter : PartnerAdapter {
                     ) {}
                 }
 
-            val adDisplayListener: AppLovinAdDisplayListener = object : AppLovinAdDisplayListener {
+            val displayListener: AppLovinAdDisplayListener = object : AppLovinAdDisplayListener {
                 override fun adDisplayed(appLovinAd: AppLovinAd) {
                     //We may need to check if the impression is recorded here.
                     continuation.resume(Result.success(partnerAd))
@@ -539,7 +537,7 @@ class AppLovinAdapter : PartnerAdapter {
                 }
             }
 
-            val adClickListener =
+            val clickListener =
                 AppLovinAdClickListener {
                     heliumListener?.onPartnerAdClicked(partnerAd) ?: LogController.d(
                         "$TAG Unable to fire onPartnerAdClicked for AppLovin adapter."
@@ -549,13 +547,13 @@ class AppLovinAdapter : PartnerAdapter {
             rewardedAd.show(
                 partnerAd.ad as AppLovinAd,
                 context,
-                adRewardListener,
-                adVideoPlaybackListener,
-                adDisplayListener,
-                adClickListener
+                rewardListener,
+                playbackListener,
+                displayListener,
+                clickListener
             )
         } ?: run {
-            LogController.w("$TAG Failed to show AppLovin interstitial ad. Ad is null.")
+            LogController.w("$TAG Failed to show AppLovin rewarded ad. Ad is null.")
             Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
         }
     }
