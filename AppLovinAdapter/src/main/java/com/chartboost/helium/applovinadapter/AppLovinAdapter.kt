@@ -592,6 +592,23 @@ class AppLovinAdapter : PartnerAdapter {
         return when (error) {
             AppLovinErrorCodes.NO_FILL -> HeliumErrorCode.NO_FILL
             AppLovinErrorCodes.NO_NETWORK -> HeliumErrorCode.NO_CONNECTIVITY
+            AppLovinErrorCodes.SDK_DISABLED -> HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED
+            // AppLovin Error Codes that need to be properly mapped. Currently mapped to PARTNER_ERROR
+            AppLovinErrorCodes.UNABLE_TO_RENDER_AD,
+            AppLovinErrorCodes.INVALID_ZONE,
+            AppLovinErrorCodes.UNSPECIFIED_ERROR,
+            AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED,
+            AppLovinErrorCodes.INVALID_RESPONSE,
+            AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES,
+            AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES,
+            AppLovinErrorCodes. UNABLE_TO_PRECACHE_VIDEO_RESOURCES,
+            AppLovinErrorCodes.FETCH_AD_TIMEOUT,
+            AppLovinErrorCodes.INVALID_AD_TOKEN,
+            AppLovinErrorCodes.INCENTIVIZED_UNKNOWN_SERVER_ERROR,
+            AppLovinErrorCodes.INCENTIVIZED_SERVER_TIMEOUT,
+            AppLovinErrorCodes.INCENTIVIZED_USER_CLOSED_VIDEO,
+            AppLovinErrorCodes.INVALID_URL  -> HeliumErrorCode.PARTNER_ERROR
+            // In case of unknown AppLovinErrorCodes.
             else -> HeliumErrorCode.INTERNAL
         }
     }
