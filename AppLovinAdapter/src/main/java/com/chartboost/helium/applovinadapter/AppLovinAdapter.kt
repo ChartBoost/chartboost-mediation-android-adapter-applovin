@@ -111,53 +111,42 @@ class AppLovinAdapter : PartnerAdapter {
     /**
      * AppLovin does not have a public method as to whether GDPR applies. No action required.
      */
-    override fun setGdprApplies(gdprApplies: Boolean) {
+    override fun setGdprApplies(context: Context, gdprApplies: Boolean) {
         // NO-OP
     }
 
     /**
      * Notify AppLovin of user GDPR consent.
      *
+     * @param context The current [Context].
      * @param gdprConsentStatus The user's current GDPR consent status.
      */
-    override fun setGdprConsentStatus(gdprConsentStatus: GdprConsentStatus) {
+    override fun setGdprConsentStatus(context: Context, gdprConsentStatus: GdprConsentStatus) {
         val consentGiven = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
-        appContext?.let {
-            AppLovinPrivacySettings.setHasUserConsent(consentGiven, it)
+        if (gdprConsentStatus != GdprConsentStatus.GDPR_CONSENT_UNKNOWN) {
+            AppLovinPrivacySettings.setHasUserConsent(consentGiven, context)
         }
     }
 
     /**
      * Notify AppLovin of the CCPA compliance.
      *
+     * @param context The current [Context].
+     * @param hasGivenCcpaConsent True if the user has given CCPA consent, false otherwise.
      * @param privacyString The CCPA privacy String.
      */
-    override fun setCcpaPrivacyString(privacyString: String?) {
-        val doNotSell = privacyString?.length?.let {
-            it.takeIf { it > 2 }?.let {
-                when (privacyString[2]) {
-                    'Y' -> true // The user opts out of the sale of personal data.
-                    'N' -> false // The user opts in to the sale of personal data.
-                    else -> {
-                        // CCPA does not apply
-                        return
-                    }
-                }
-            } ?: return
-        } ?: return
-
-        appContext?.let {
-            AppLovinPrivacySettings.setDoNotSell(doNotSell, it)
-        }
+    override fun setCcpaConsent(context: Context, hasGivenCcpaConsent: Boolean, privacyString: String?) {
+        AppLovinPrivacySettings.setDoNotSell(!hasGivenCcpaConsent, context)
     }
 
     /**
      * Notify AppLovin of the COPPA subjectivity.
+     *
+     * @param context The current [Context].
+     * @param isSubjectToCoppa True if the user is subject to COPPA, false otherwise.
      */
-    override fun setUserSubjectToCoppa(isSubjectToCoppa: Boolean) {
-        appContext?.let {
-            AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, it)
-        }
+    override fun setUserSubjectToCoppa(context: Context, isSubjectToCoppa: Boolean) {
+        AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, context)
     }
 
     /**
@@ -264,7 +253,6 @@ class AppLovinAdapter : PartnerAdapter {
                             Result.success(
                                 PartnerAd(
                                     ad = ad,
-                                    inlineView = appLovinAdView,
                                     details = emptyMap(),
                                     request = request
                                 )
@@ -297,7 +285,6 @@ class AppLovinAdapter : PartnerAdapter {
                     partnerAdListener.onPartnerAdClicked(
                         PartnerAd(
                             ad = ad,
-                            inlineView = appLovinAdView,
                             details = emptyMap(),
                             request = request
                         )
@@ -353,7 +340,6 @@ class AppLovinAdapter : PartnerAdapter {
                                 Result.success(
                                     PartnerAd(
                                         ad = ad,
-                                        inlineView = null,
                                         details = emptyMap(),
                                         request = request
                                     )
@@ -403,7 +389,6 @@ class AppLovinAdapter : PartnerAdapter {
                             Result.success(
                                 PartnerAd(
                                     ad = ad,
-                                    inlineView = null,
                                     details = emptyMap(),
                                     request = request
                                 )
@@ -502,7 +487,11 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
                 override fun userOverQuota(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
-                override fun userRewardRejected(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
+                override fun userRewardRejected(
+                    appLovinAd: AppLovinAd,
+                    map: Map<String, String>?
+                ) {
+                }
 
                 override fun validationRequestFailed(appLovinAd: AppLovinAd, responseCode: Int) {
                     LogController.d("$TAG validationRequestFailed for $partnerAd. Error: $responseCode")
