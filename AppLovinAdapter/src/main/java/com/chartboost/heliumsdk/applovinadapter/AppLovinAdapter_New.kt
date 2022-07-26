@@ -1,4 +1,4 @@
-package com.chartboost.helium.applovinadapter
+package com.chartboost.heliumsdk.applovinadapter
 
 import android.content.Context
 import android.util.DisplayMetrics
@@ -6,7 +6,6 @@ import android.util.Size
 import android.view.View.GONE
 import com.applovin.adview.*
 import com.applovin.sdk.*
-import com.chartboost.helium.applovinadapter.BuildConfig.VERSION_NAME
 import com.chartboost.heliumsdk.domain.*
 import com.chartboost.heliumsdk.utils.LogController
 import kotlin.coroutines.resume
@@ -15,12 +14,12 @@ import kotlin.coroutines.suspendCoroutine
 /**
  * The Helium AppLovin SDK adapter.
  */
-class AppLovinAdapter : PartnerAdapter {
+class AppLovinAdapter_New : PartnerAdapter {
     companion object {
         /**
          * The tag used for log messages.
          */
-        private const val TAG = "[AppLovinAdapter]"
+        private const val TAG = "[AppLovinAdapter_New]"
     }
 
     /**
@@ -52,7 +51,7 @@ class AppLovinAdapter : PartnerAdapter {
      * of the partner SDK, and `Adapter` is the version of the adapter.
      */
     override val adapterVersion: String
-        get() = VERSION_NAME
+        get() = "VERSION_NAME" // TODO: Uncomment
 
     /**
      * Get the partner name for internal uses.
@@ -91,7 +90,7 @@ class AppLovinAdapter : PartnerAdapter {
                     ).also { sdk ->
                         sdk.initializeSdk {
                             sdk.mediationProvider = "Helium"
-                            sdk.setPluginVersion(VERSION_NAME)
+                            sdk.setPluginVersion(adapterVersion)
                             continuation.resume(
                                 Result.success(
                                     LogController.i("$TAG AppLovin SDK successfully initialized.")
@@ -123,9 +122,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override fun setGdprConsentStatus(context: Context, gdprConsentStatus: GdprConsentStatus) {
         val consentGiven = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
-        if (gdprConsentStatus != GdprConsentStatus.GDPR_CONSENT_UNKNOWN) {
-            AppLovinPrivacySettings.setHasUserConsent(consentGiven, context)
-        }
+        AppLovinPrivacySettings.setHasUserConsent(consentGiven, context)
     }
 
     /**
@@ -140,8 +137,6 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Notify AppLovin of the COPPA subjectivity.
-     *
      * @param context The current [Context].
      * @param isSubjectToCoppa True if the user is subject to COPPA, false otherwise.
      */
@@ -487,11 +482,7 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
                 override fun userOverQuota(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
-                override fun userRewardRejected(
-                    appLovinAd: AppLovinAd,
-                    map: Map<String, String>?
-                ) {
-                }
+                override fun userRewardRejected(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
 
                 override fun validationRequestFailed(appLovinAd: AppLovinAd, responseCode: Int) {
                     LogController.d("$TAG validationRequestFailed for $partnerAd. Error: $responseCode")
