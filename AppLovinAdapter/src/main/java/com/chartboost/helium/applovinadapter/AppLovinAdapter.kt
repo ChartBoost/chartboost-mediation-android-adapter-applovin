@@ -1,4 +1,4 @@
-package com.chartboost.heliumsdk.applovinadapter
+package com.chartboost.helium.applovinadapter
 
 import android.content.Context
 import android.util.DisplayMetrics
@@ -14,12 +14,12 @@ import kotlin.coroutines.suspendCoroutine
 /**
  * The Helium AppLovin SDK adapter.
  */
-class AppLovinAdapter_New : PartnerAdapter {
+class AppLovinAdapter : PartnerAdapter {
     companion object {
         /**
          * The tag used for log messages.
          */
-        private const val TAG = "[AppLovinAdapter_New]"
+        private val TAG = "[${this::class.java.simpleName}]"
     }
 
     /**
@@ -137,6 +137,8 @@ class AppLovinAdapter_New : PartnerAdapter {
     }
 
     /**
+     * Notify AppLovin of the COPPA subjectivity.
+     *
      * @param context The current [Context].
      * @param isSubjectToCoppa True if the user is subject to COPPA, false otherwise.
      */
