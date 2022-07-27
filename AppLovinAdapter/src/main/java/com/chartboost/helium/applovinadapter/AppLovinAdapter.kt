@@ -51,7 +51,7 @@ class AppLovinAdapter : PartnerAdapter {
      * of the partner SDK, and `Adapter` is the version of the adapter.
      */
     override val adapterVersion: String
-        get() = "VERSION_NAME" // TODO: Uncomment
+        get() = BuildConfig.HELIUM_APPLOVIN_ADAPTER_VERSION
 
     /**
      * Get the partner name for internal uses.

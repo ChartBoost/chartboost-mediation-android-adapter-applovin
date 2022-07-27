@@ -22,6 +22,7 @@ android {
         targetSdk 32
         versionCode 1
         versionName "2.11.3.1.0"
+        buildConfigField "String", "HELIUM_APPLOVIN_ADAPTER_VERSION", "\"$versionName\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
