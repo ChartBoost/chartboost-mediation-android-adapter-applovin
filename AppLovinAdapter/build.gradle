@@ -1,5 +1,5 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
 }
 
@@ -18,11 +18,11 @@ android {
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.chartboost.helium.applovinadapter"
         minSdk 21
         targetSdk 32
         versionCode 1
         versionName "2.11.3.1.0"
+        buildConfigField "String", "HELIUM_APPLOVIN_ADAPTER_VERSION", "\"$versionName\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,14 +49,7 @@ android {
 }
 
 dependencies {
-    // For internal usage, please use local pathing to get development features.
-    // Ensure that the Helium repo is a sibling of your `helium-android-adapter-applovin` dir.
-    // The AAR file must also be available.
-    implementation (name:'Helium-debug', ext: 'aar')
-
-    // For external usage, please use the following production dependency.
-    // You may choose a different release version.
-    // implementation 'com.chartboost:helium:3.0.0'
+    implementation project(path: ':Helium')
 
     //Partner SDK
     implementation 'com.applovin:applovin-sdk:11.3.1'
