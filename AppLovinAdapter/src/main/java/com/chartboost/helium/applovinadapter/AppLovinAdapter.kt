@@ -249,7 +249,7 @@ class AppLovinAdapter : PartnerAdapter {
                         continuation.resume(
                             Result.success(
                                 PartnerAd(
-                                    ad = ad,
+                                    ad = appLovinAdView,
                                     details = emptyMap(),
                                     request = request
                                 )
@@ -429,9 +429,6 @@ class AppLovinAdapter : PartnerAdapter {
                 interstitialAd.setAdDisplayListener(object :
                     AppLovinAdDisplayListener {
                     override fun adDisplayed(ad: AppLovinAd?) {
-                        heliumListener?.onPartnerAdImpression(partnerAd) ?: LogController.d(
-                            "$TAG Unable to fire onPartnerAdImpression for AppLovin adapter."
-                        )
                         continuation.resume(Result.success(partnerAd))
                     }
 
@@ -494,9 +491,6 @@ class AppLovinAdapter : PartnerAdapter {
             val playbackListener: AppLovinAdVideoPlaybackListener =
                 object : AppLovinAdVideoPlaybackListener {
                     override fun videoPlaybackBegan(appLovinAd: AppLovinAd) {
-                        heliumListener?.onPartnerAdImpression(partnerAd) ?: LogController.d(
-                            "$TAG Unable to fire onPartnerAdImpression for AppLovin adapter."
-                        )
                     }
 
                     override fun videoPlaybackEnded(
