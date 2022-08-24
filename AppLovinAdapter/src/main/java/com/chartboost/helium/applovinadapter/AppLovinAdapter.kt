@@ -25,69 +25,57 @@ import kotlin.coroutines.suspendCoroutine
 class AppLovinAdapter : PartnerAdapter {
     companion object {
         /**
-         * Test mode flag that can optionally be set to true to enable test ads. Since a valid Context
-         * is needed, only set this flag after the Helium SDK has initialized. Remember to set this
-         * to false in production.
+         * Enable/disable AppLovin's test mode. Remember to set this to false in production.
+         *
+         * @param context The current [Context].
+         * @param enabled True to enable test mode, false otherwise.
          */
-        public var testMode = false
-            set(value) {
-                val context = HeliumSdk.getContext() ?: run {
-                    LogController.e("$TAG AppLovin unable to set test mode. Context is null.")
-                    return
-                }
-
-                field = value
-
-                if (value) {
+        public fun setTestMode(context: Context?, enabled: Boolean) {
+            context?.let {
+                if (enabled) {
                     CoroutineScope(IO).launch {
                         val adInfo = try {
-                            AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                            AdvertisingIdClient.getAdvertisingIdInfo(it).id
                         } catch (e: Exception) {
-                            context.contentResolver.let {
-                                Settings.Secure.getString(it, "advertising_id")
+                            it.contentResolver.let { resolver ->
+                                Settings.Secure.getString(resolver, "advertising_id")
                             }
                         }
 
                         adInfo?.let { adId ->
                             withContext(Main) {
-                                AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
+                                AppLovinSdk.getInstance(it).settings.testDeviceAdvertisingIds =
                                     listOf(adId)
                             }
+                        } ?: run {
+                            LogController.w("AppLovin test mode is disabled. No advertising id found.")
+                            AppLovinSdk.getInstance(it).settings.testDeviceAdvertisingIds =
+                                emptyList()
                         }
                     }
                 } else {
-                    AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds = emptyList()
+                    AppLovinSdk.getInstance(it).settings.testDeviceAdvertisingIds = emptyList()
                 }
 
                 LogController.d(
                     "$TAG - AppLovin test mode is ${
-                        if (value) "enabled. Remember to disable it before publishing."
+                        if (enabled) "enabled. Remember to disable it before publishing."
                         else "disabled."
                     }"
                 )
-            }
+            } ?: LogController.e("$TAG AppLovin unable to set test mode. Context is null.")
+        }
 
         /**
-         * Flag that can optionally be set to true to enable verbose logging. Since a valid Context
-         * is needed, only set this flag after the Helium SDK has initialized.
+         * Enable/disable AppLovin's verbose logging.
+         *
+         * @param context The current [Context].
+         * @param enabled True to enable verbose logging, false otherwise.
          */
-        public var verboseLogging = false
-            set(value) {
-                val context = HeliumSdk.getContext() ?: run {
-                    LogController.e("$TAG AppLovin unable to set verbose logging. Context is null.")
-                    return
-                }
-
-                field = value
-
-                AppLovinSdk.getInstance(context).settings.setVerboseLogging(value)
-                LogController.d(
-                    "$TAG - AppLovin verbose logging is ${
-                        if (value) "enabled"
-                        else "disabled"
-                    }."
-                )
-            }
+        public fun setVerboseLogging(context: Context?, enabled: Boolean) {
+            AppLovinSdk.getInstance(context).settings.setVerboseLogging(enabled)
+            LogController.d("$TAG - AppLovin verbose logging is ${if (enabled) "enabled" else "disabled"}.")
+        }
 
         /**
          * The tag used for log messages.
@@ -205,7 +193,11 @@ class AppLovinAdapter : PartnerAdapter {
      * @param hasGivenCcpaConsent True if the user has given CCPA consent, false otherwise.
      * @param privacyString The CCPA privacy String.
      */
-    override fun setCcpaConsent(context: Context, hasGivenCcpaConsent: Boolean, privacyString: String?) {
+    override fun setCcpaConsent(
+        context: Context,
+        hasGivenCcpaConsent: Boolean,
+        privacyString: String?
+    ) {
         AppLovinPrivacySettings.setDoNotSell(!hasGivenCcpaConsent, context)
     }
 
@@ -554,7 +546,11 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
                 override fun userOverQuota(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
-                override fun userRewardRejected(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
+                override fun userRewardRejected(
+                    appLovinAd: AppLovinAd,
+                    map: Map<String, String>?
+                ) {
+                }
 
                 override fun validationRequestFailed(appLovinAd: AppLovinAd, responseCode: Int) {
                     LogController.d("$TAG validationRequestFailed for $partnerAd. Error: $responseCode")
