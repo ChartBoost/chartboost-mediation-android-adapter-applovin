@@ -1,13 +1,21 @@
 package com.chartboost.helium.applovinadapter
 
 import android.content.Context
+import android.provider.Settings
 import android.util.DisplayMetrics
 import android.util.Size
 import android.view.View.GONE
 import com.applovin.adview.*
 import com.applovin.sdk.*
+import com.chartboost.heliumsdk.HeliumSdk
 import com.chartboost.heliumsdk.domain.*
 import com.chartboost.heliumsdk.utils.LogController
+import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -16,6 +24,71 @@ import kotlin.coroutines.suspendCoroutine
  */
 class AppLovinAdapter : PartnerAdapter {
     companion object {
+        /**
+         * Test mode flag that can optionally be set to true to enable test ads. Since a valid Context
+         * is needed, only set this flag after the Helium SDK has initialized. Remember to set this
+         * to false in production.
+         */
+        public var testMode = false
+            set(value) {
+                val context = HeliumSdk.getContext() ?: run {
+                    LogController.e("$TAG AppLovin unable to set test mode. Context is null.")
+                    return
+                }
+
+                field = value
+
+                if (value) {
+                    CoroutineScope(IO).launch {
+                        val adInfo = try {
+                            AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                        } catch (e: Exception) {
+                            context.contentResolver.let {
+                                Settings.Secure.getString(it, "advertising_id")
+                            }
+                        }
+
+                        adInfo?.let { adId ->
+                            withContext(Main) {
+                                AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
+                                    listOf(adId)
+                            }
+                        }
+                    }
+                } else {
+                    AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds = emptyList()
+                }
+
+                LogController.d(
+                    "$TAG - AppLovin test mode is ${
+                        if (value) "enabled. Remember to disable it before publishing."
+                        else "disabled."
+                    }"
+                )
+            }
+
+        /**
+         * Flag that can optionally be set to true to enable verbose logging. Since a valid Context
+         * is needed, only set this flag after the Helium SDK has initialized.
+         */
+        public var verboseLogging = false
+            set(value) {
+                val context = HeliumSdk.getContext() ?: run {
+                    LogController.e("$TAG AppLovin unable to set verbose logging. Context is null.")
+                    return
+                }
+
+                field = value
+
+                AppLovinSdk.getInstance(context).settings.setVerboseLogging(value)
+                LogController.d(
+                    "$TAG - AppLovin verbose logging is ${
+                        if (value) "enabled"
+                        else "disabled"
+                    }."
+                )
+            }
+
         /**
          * The tag used for log messages.
          */
