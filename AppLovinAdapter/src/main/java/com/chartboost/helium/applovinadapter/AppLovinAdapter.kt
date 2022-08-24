@@ -1,6 +1,7 @@
 package com.chartboost.helium.applovinadapter
 
 import android.content.Context
+import android.provider.Settings
 import android.util.DisplayMetrics
 import android.util.Size
 import android.view.View.GONE
@@ -8,6 +9,12 @@ import com.applovin.adview.*
 import com.applovin.sdk.*
 import com.chartboost.heliumsdk.domain.*
 import com.chartboost.heliumsdk.utils.LogController
+import com.google.android.gms.ads.identifier.AdvertisingIdClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -16,6 +23,57 @@ import kotlin.coroutines.suspendCoroutine
  */
 class AppLovinAdapter : PartnerAdapter {
     companion object {
+        /**
+         * Enable/disable AppLovin's test mode. Remember to set this to false in production.
+         *
+         * @param context The current [Context].
+         * @param enabled True to enable test mode, false otherwise.
+         */
+        public fun setTestMode(context: Context, enabled: Boolean) {
+            if (enabled) {
+                CoroutineScope(IO).launch {
+                    val adInfo = try {
+                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                    } catch (e: Exception) {
+                        context.contentResolver.let { resolver ->
+                            Settings.Secure.getString(resolver, "advertising_id")
+                        }
+                    }
+
+                    adInfo?.let { adId ->
+                        withContext(Main) {
+                            AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
+                                listOf(adId)
+                        }
+                    } ?: run {
+                        LogController.w("AppLovin test mode is disabled. No advertising id found.")
+                        AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
+                            emptyList()
+                    }
+                }
+            } else {
+                AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds = emptyList()
+            }
+
+            LogController.d(
+                "$TAG - AppLovin test mode is ${
+                    if (enabled) "enabled. Remember to disable it before publishing."
+                    else "disabled."
+                }"
+            )
+        }
+
+        /**
+         * Enable/disable AppLovin's verbose logging.
+         *
+         * @param context The current [Context].
+         * @param enabled True to enable verbose logging, false otherwise.
+         */
+        public fun setVerboseLogging(context: Context, enabled: Boolean) {
+            AppLovinSdk.getInstance(context).settings.setVerboseLogging(enabled)
+            LogController.d("$TAG - AppLovin verbose logging is ${if (enabled) "enabled" else "disabled"}.")
+        }
+
         /**
          * The tag used for log messages.
          */
@@ -132,7 +190,11 @@ class AppLovinAdapter : PartnerAdapter {
      * @param hasGivenCcpaConsent True if the user has given CCPA consent, false otherwise.
      * @param privacyString The CCPA privacy String.
      */
-    override fun setCcpaConsent(context: Context, hasGivenCcpaConsent: Boolean, privacyString: String?) {
+    override fun setCcpaConsent(
+        context: Context,
+        hasGivenCcpaConsent: Boolean,
+        privacyString: String?
+    ) {
         AppLovinPrivacySettings.setDoNotSell(!hasGivenCcpaConsent, context)
     }
 
@@ -481,7 +543,11 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
                 override fun userOverQuota(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
-                override fun userRewardRejected(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
+                override fun userRewardRejected(
+                    appLovinAd: AppLovinAd,
+                    map: Map<String, String>?
+                ) {
+                }
 
                 override fun validationRequestFailed(appLovinAd: AppLovinAd, responseCode: Int) {
                     LogController.d("$TAG validationRequestFailed for $partnerAd. Error: $responseCode")
