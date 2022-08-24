@@ -7,7 +7,6 @@ import android.util.Size
 import android.view.View.GONE
 import com.applovin.adview.*
 import com.applovin.sdk.*
-import com.chartboost.heliumsdk.HeliumSdk
 import com.chartboost.heliumsdk.domain.*
 import com.chartboost.heliumsdk.utils.LogController
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
