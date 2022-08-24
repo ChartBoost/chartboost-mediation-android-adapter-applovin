@@ -29,40 +29,38 @@ class AppLovinAdapter : PartnerAdapter {
          * @param context The current [Context].
          * @param enabled True to enable test mode, false otherwise.
          */
-        public fun setTestMode(context: Context?, enabled: Boolean) {
-            context?.let {
-                if (enabled) {
-                    CoroutineScope(IO).launch {
-                        val adInfo = try {
-                            AdvertisingIdClient.getAdvertisingIdInfo(it).id
-                        } catch (e: Exception) {
-                            it.contentResolver.let { resolver ->
-                                Settings.Secure.getString(resolver, "advertising_id")
-                            }
-                        }
-
-                        adInfo?.let { adId ->
-                            withContext(Main) {
-                                AppLovinSdk.getInstance(it).settings.testDeviceAdvertisingIds =
-                                    listOf(adId)
-                            }
-                        } ?: run {
-                            LogController.w("AppLovin test mode is disabled. No advertising id found.")
-                            AppLovinSdk.getInstance(it).settings.testDeviceAdvertisingIds =
-                                emptyList()
+        public fun setTestMode(context: Context, enabled: Boolean) {
+            if (enabled) {
+                CoroutineScope(IO).launch {
+                    val adInfo = try {
+                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                    } catch (e: Exception) {
+                        context.contentResolver.let { resolver ->
+                            Settings.Secure.getString(resolver, "advertising_id")
                         }
                     }
-                } else {
-                    AppLovinSdk.getInstance(it).settings.testDeviceAdvertisingIds = emptyList()
-                }
 
-                LogController.d(
-                    "$TAG - AppLovin test mode is ${
-                        if (enabled) "enabled. Remember to disable it before publishing."
-                        else "disabled."
-                    }"
-                )
-            } ?: LogController.e("$TAG AppLovin unable to set test mode. Context is null.")
+                    adInfo?.let { adId ->
+                        withContext(Main) {
+                            AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
+                                listOf(adId)
+                        }
+                    } ?: run {
+                        LogController.w("AppLovin test mode is disabled. No advertising id found.")
+                        AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
+                            emptyList()
+                    }
+                }
+            } else {
+                AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds = emptyList()
+            }
+
+            LogController.d(
+                "$TAG - AppLovin test mode is ${
+                    if (enabled) "enabled. Remember to disable it before publishing."
+                    else "disabled."
+                }"
+            )
         }
 
         /**
@@ -71,7 +69,7 @@ class AppLovinAdapter : PartnerAdapter {
          * @param context The current [Context].
          * @param enabled True to enable verbose logging, false otherwise.
          */
-        public fun setVerboseLogging(context: Context?, enabled: Boolean) {
+        public fun setVerboseLogging(context: Context, enabled: Boolean) {
             AppLovinSdk.getInstance(context).settings.setVerboseLogging(enabled)
             LogController.d("$TAG - AppLovin verbose logging is ${if (enabled) "enabled" else "disabled"}.")
         }
