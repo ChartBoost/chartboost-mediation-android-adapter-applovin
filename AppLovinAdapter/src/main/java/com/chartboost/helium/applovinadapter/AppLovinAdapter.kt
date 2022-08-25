@@ -297,21 +297,18 @@ class AppLovinAdapter : PartnerAdapter {
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
-            appLovinSdk?.let {
-                val appLovinAdView =
-                    AppLovinAdView(
-                        it,
-                        getAppLovinAdSize(request.size),
-                        request.partnerId,
-                        context
-                    )
-
-                val listener: AppLovinAdLoadListener = object : AppLovinAdLoadListener {
+            AppLovinAdView(
+                getAppLovinAdSize(request.size),
+                request.partnerPlacement,
+                context
+            ).apply {
+                // Apply the Ad Load Listener to the AppLovinAdView
+                setAdLoadListener(object : AppLovinAdLoadListener {
                     override fun adReceived(ad: AppLovinAd) {
                         continuation.resume(
                             Result.success(
                                 PartnerAd(
-                                    ad = appLovinAdView,
+                                    ad = this@apply,
                                     details = emptyMap(),
                                     request = request
                                 )
@@ -325,9 +322,10 @@ class AppLovinAdapter : PartnerAdapter {
                             Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
                         )
                     }
-                }
+                })
 
-                appLovinAdView.setAdViewEventListener(object : AppLovinAdViewEventListener {
+                // Apply the AdView Event Listener to the AppLovinAdView
+                setAdViewEventListener(object : AppLovinAdViewEventListener {
                     override fun adOpenedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
                     override fun adClosedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
                     override fun adLeftApplication(ad: AppLovinAd, adView: AppLovinAdView) {}
@@ -340,7 +338,8 @@ class AppLovinAdapter : PartnerAdapter {
                     }
                 })
 
-                appLovinAdView.setAdClickListener { ad ->
+                // Apply the Ad Click Listener to the AppLovinAdView
+                setAdClickListener { ad ->
                     partnerAdListener.onPartnerAdClicked(
                         PartnerAd(
                             ad = ad,
@@ -350,11 +349,8 @@ class AppLovinAdapter : PartnerAdapter {
                     )
                 }
 
-                it.adService.loadNextAdForZoneId(request.partnerPlacement, listener)
-
-            } ?: run {
-                LogController.w("Failed to load AppLovin banner ad, AppLovin SDK is null")
-                continuation.resume(Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_ERROR)))
+                // Load and immediately show the AppLovin banner ad.
+                loadNextAd()
             }
         }
     }
@@ -366,12 +362,15 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return The AppLovin ad size that best matches the given [Size].
      */
-    private fun getAppLovinAdSize(size: Size?) = when (size?.height) {
-        // TO-DO: An updated version of this method will later be updated.
-        in 50 until 90 -> AppLovinAdSize.BANNER
-        in 90 until 250 -> AppLovinAdSize.LEADER
-        in 250 until DisplayMetrics().heightPixels -> AppLovinAdSize.MREC
-        else -> AppLovinAdSize.BANNER
+    private fun getAppLovinAdSize(size: Size?): AppLovinAdSize {
+        return size?.height?.let {
+            when {
+                it in 50 until 90 -> AppLovinAdSize.BANNER
+                it in 90 until 250 -> AppLovinAdSize.LEADER
+                it >= 250 -> AppLovinAdSize.MREC
+                else -> AppLovinAdSize.BANNER
+            }
+        } ?: AppLovinAdSize.BANNER
     }
 
     /**
@@ -392,7 +391,7 @@ class AppLovinAdapter : PartnerAdapter {
                 listeners[request.heliumPlacement] = partnerAdListener
 
                 it.adService.loadNextAdForZoneId(
-                    request.heliumPlacement,
+                    request.partnerPlacement,
                     object : AppLovinAdLoadListener {
                         override fun adReceived(ad: AppLovinAd?) {
                             continuation.resume(
