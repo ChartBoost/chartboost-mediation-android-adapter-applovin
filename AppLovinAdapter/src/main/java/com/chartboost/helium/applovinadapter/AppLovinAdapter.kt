@@ -296,7 +296,6 @@ class AppLovinAdapter : PartnerAdapter {
         context: Context,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
-        // AppLovin needs to create the AdView on the Main thread.
         return suspendCoroutine { continuation ->
             // Create the AppLovin AdView
             AppLovinAdView(
