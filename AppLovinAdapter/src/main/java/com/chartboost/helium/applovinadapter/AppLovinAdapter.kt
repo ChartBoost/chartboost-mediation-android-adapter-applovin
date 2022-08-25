@@ -297,7 +297,6 @@ class AppLovinAdapter : PartnerAdapter {
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
-            // Create the AppLovin AdView
             AppLovinAdView(
                 getAppLovinAdSize(request.size),
                 request.partnerPlacement,
