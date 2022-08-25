@@ -297,64 +297,62 @@ class AppLovinAdapter : PartnerAdapter {
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
         // AppLovin needs to create the AdView on the Main thread.
-        return withContext(Main) {
-            suspendCoroutine { continuation ->
-                // Create the AppLovin AdView
-                AppLovinAdView(
-                    getAppLovinAdSize(request.size),
-                    request.partnerPlacement,
-                    context
-                ).apply {
-                    // Apply the Ad Load Listener to the AppLovinAdView
-                    setAdLoadListener(object : AppLovinAdLoadListener {
-                        override fun adReceived(ad: AppLovinAd) {
-                            continuation.resume(
-                                Result.success(
-                                    PartnerAd(
-                                        ad = this@apply,
-                                        details = emptyMap(),
-                                        request = request
-                                    )
+        return suspendCoroutine { continuation ->
+            // Create the AppLovin AdView
+            AppLovinAdView(
+                getAppLovinAdSize(request.size),
+                request.partnerPlacement,
+                context
+            ).apply {
+                // Apply the Ad Load Listener to the AppLovinAdView
+                setAdLoadListener(object : AppLovinAdLoadListener {
+                    override fun adReceived(ad: AppLovinAd) {
+                        continuation.resume(
+                            Result.success(
+                                PartnerAd(
+                                    ad = this@apply,
+                                    details = emptyMap(),
+                                    request = request
                                 )
-                            )
-                        }
-
-                        override fun failedToReceiveAd(errorCode: Int) {
-                            LogController.d("$TAG Banner ad failedToReceiveAd $errorCode")
-                            continuation.resume(
-                                Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
-                            )
-                        }
-                    })
-
-                    // Apply the AdView Event Listener to the AppLovinAdView
-                    setAdViewEventListener(object : AppLovinAdViewEventListener {
-                        override fun adOpenedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
-                        override fun adClosedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
-                        override fun adLeftApplication(ad: AppLovinAd, adView: AppLovinAdView) {}
-                        override fun adFailedToDisplay(
-                            ad: AppLovinAd,
-                            adView: AppLovinAdView,
-                            errorCode: AppLovinAdViewDisplayErrorCode
-                        ) {
-                            LogController.d("$TAG Banner AppLovinAdViewDisplayErrorCode $errorCode")
-                        }
-                    })
-
-                    // Apply the Ad Click Listener to the AppLovinAdView
-                    setAdClickListener { ad ->
-                        partnerAdListener.onPartnerAdClicked(
-                            PartnerAd(
-                                ad = ad,
-                                details = emptyMap(),
-                                request = request
                             )
                         )
                     }
 
-                    // Load and immediately show the AppLovin banner ad.
-                    loadNextAd()
+                    override fun failedToReceiveAd(errorCode: Int) {
+                        LogController.d("$TAG Banner ad failedToReceiveAd $errorCode")
+                        continuation.resume(
+                            Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
+                        )
+                    }
+                })
+
+                // Apply the AdView Event Listener to the AppLovinAdView
+                setAdViewEventListener(object : AppLovinAdViewEventListener {
+                    override fun adOpenedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
+                    override fun adClosedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
+                    override fun adLeftApplication(ad: AppLovinAd, adView: AppLovinAdView) {}
+                    override fun adFailedToDisplay(
+                        ad: AppLovinAd,
+                        adView: AppLovinAdView,
+                        errorCode: AppLovinAdViewDisplayErrorCode
+                    ) {
+                        LogController.d("$TAG Banner AppLovinAdViewDisplayErrorCode $errorCode")
+                    }
+                })
+
+                // Apply the Ad Click Listener to the AppLovinAdView
+                setAdClickListener { ad ->
+                    partnerAdListener.onPartnerAdClicked(
+                        PartnerAd(
+                            ad = ad,
+                            details = emptyMap(),
+                            request = request
+                        )
+                    )
                 }
+
+                // Load and immediately show the AppLovin banner ad.
+                loadNextAd()
             }
         }
     }
