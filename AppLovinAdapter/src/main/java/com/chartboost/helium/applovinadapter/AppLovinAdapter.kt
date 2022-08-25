@@ -296,9 +296,9 @@ class AppLovinAdapter : PartnerAdapter {
         context: Context,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
-        return suspendCoroutine { continuation ->
-            // AppLovin needs to create the AdView on the Main thread.
-            CoroutineScope(Main).launch {
+        // AppLovin needs to create the AdView on the Main thread.
+        return withContext(Main) {
+            suspendCoroutine { continuation ->
                 // Create the AppLovin AdView
                 AppLovinAdView(
                     getAppLovinAdSize(request.size),
