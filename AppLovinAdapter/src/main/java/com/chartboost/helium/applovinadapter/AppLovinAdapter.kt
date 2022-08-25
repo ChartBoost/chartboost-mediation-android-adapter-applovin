@@ -69,7 +69,7 @@ class AppLovinAdapter : PartnerAdapter {
          * @param context The current [Context].
          * @param muted True to mute, false otherwise.
          */
-        public fun setMute(context: Context, muted: Boolean) {
+        public fun setMuted(context: Context, muted: Boolean) {
             AppLovinSdk.getInstance(context).settings.isMuted = muted
             LogController.d("$TAG - AppLovin video creatives will be ${if (muted) "muted" else "unmuted"}.")
         }
