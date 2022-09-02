@@ -2,7 +2,6 @@ package com.chartboost.helium.applovinadapter
 
 import android.content.Context
 import android.provider.Settings
-import android.util.DisplayMetrics
 import android.util.Size
 import android.view.View.GONE
 import com.applovin.adview.*
