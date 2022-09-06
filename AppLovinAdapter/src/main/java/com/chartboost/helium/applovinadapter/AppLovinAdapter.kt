@@ -63,7 +63,7 @@ class AppLovinAdapter : PartnerAdapter {
             PartnerLogController.log(
                 CUSTOM,
                 "AppLovin test mode is ${
-                    if (enabled) "enabled. Reme,mber to disable it before publishing."
+                    if (enabled) "enabled. Remember to disable it before publishing."
                     else "disabled."
                 }"
             )
