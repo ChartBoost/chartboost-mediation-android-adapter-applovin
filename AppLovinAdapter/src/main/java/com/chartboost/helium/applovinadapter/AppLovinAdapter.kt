@@ -156,26 +156,27 @@ class AppLovinAdapter : PartnerAdapter {
         PartnerLogController.log(SETUP_STARTED)
 
         return suspendCoroutine { continuation ->
-            partnerConfiguration.credentials["sdk_key"]?.let { sdkKey ->
-                context.applicationContext?.let {
-                    // Save the application context for later usage.
-                    appContext = it
+            partnerConfiguration.credentials.optString("sdk_key").takeIf { it.isNotBlank() }
+                ?.let { sdkKey ->
+                    context.applicationContext?.let {
+                        // Save the application context for later usage.
+                        appContext = it
 
-                    appLovinSdk = AppLovinSdk.getInstance(
-                        sdkKey,
-                        AppLovinSdkSettings(it),
-                        it
-                    ).also { sdk ->
-                        sdk.initializeSdk {
-                            sdk.mediationProvider = "Helium"
-                            sdk.setPluginVersion(adapterVersion)
-                            continuation.resume(
-                                Result.success(PartnerLogController.log(SETUP_SUCCEEDED))
-                            )
+                        appLovinSdk = AppLovinSdk.getInstance(
+                            sdkKey,
+                            AppLovinSdkSettings(it),
+                            it
+                        ).also { sdk ->
+                            sdk.initializeSdk {
+                                sdk.mediationProvider = "Helium"
+                                sdk.setPluginVersion(adapterVersion)
+                                continuation.resume(
+                                    Result.success(PartnerLogController.log(SETUP_SUCCEEDED))
+                                )
+                            }
                         }
                     }
-                }
-            } ?: run {
+                } ?: run {
                 PartnerLogController.log(SETUP_FAILED, "No SDK key found.")
                 continuation.resume(Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED)))
             }
