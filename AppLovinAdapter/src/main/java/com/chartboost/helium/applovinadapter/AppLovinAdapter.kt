@@ -156,7 +156,7 @@ class AppLovinAdapter : PartnerAdapter {
         PartnerLogController.log(SETUP_STARTED)
 
         return suspendCoroutine { continuation ->
-            partnerConfiguration.credentials.optString("sdk_key").takeIf { it.isNotBlank() }
+            partnerConfiguration.credentials.optString("sdk_key").trim().takeIf { it.isNotEmpty() }
                 ?.let { sdkKey ->
                     context.applicationContext?.let {
                         // Save the application context for later usage.
