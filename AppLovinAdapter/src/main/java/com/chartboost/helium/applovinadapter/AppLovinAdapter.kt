@@ -9,8 +9,6 @@ import com.applovin.sdk.*
 import com.chartboost.heliumsdk.domain.*
 import com.chartboost.heliumsdk.utils.PartnerLogController
 import com.chartboost.heliumsdk.utils.PartnerLogController.PartnerAdapterEvents.*
-import com.chartboost.heliumsdk.utils.PartnerLogController.PartnerAdapterFailureEvents.*
-import com.chartboost.heliumsdk.utils.PartnerLogController.PartnerAdapterSuccessEvents.*
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
@@ -187,6 +185,7 @@ class AppLovinAdapter : PartnerAdapter {
      * AppLovin does not have a public method as to whether GDPR applies. No action required.
      */
     override fun setGdprApplies(context: Context, gdprApplies: Boolean) {
+        PartnerLogController.log(if (gdprApplies) GDPR_APPLICABLE else GDPR_NOT_APPLICABLE)
         // NO-OP
     }
 
@@ -197,6 +196,14 @@ class AppLovinAdapter : PartnerAdapter {
      * @param gdprConsentStatus The user's current GDPR consent status.
      */
     override fun setGdprConsentStatus(context: Context, gdprConsentStatus: GdprConsentStatus) {
+        PartnerLogController.log(
+            when (gdprConsentStatus) {
+                GdprConsentStatus.GDPR_CONSENT_UNKNOWN -> GDPR_CONSENT_UNKNOWN
+                GdprConsentStatus.GDPR_CONSENT_GRANTED -> GDPR_CONSENT_GRANTED
+                GdprConsentStatus.GDPR_CONSENT_DENIED -> GDPR_CONSENT_DENIED
+            }
+        )
+
         val consentGiven = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
         AppLovinPrivacySettings.setHasUserConsent(consentGiven, context)
     }
@@ -205,15 +212,21 @@ class AppLovinAdapter : PartnerAdapter {
      * Notify AppLovin of the CCPA compliance.
      *
      * @param context The current [Context].
-     * @param hasGivenCcpaConsent True if the user has given CCPA consent, false otherwise.
+     * @param hasGrantedCcpaConsent True if the user has granted CCPA consent, false otherwise.
      * @param privacyString The CCPA privacy String.
      */
     override fun setCcpaConsent(
         context: Context,
-        hasGivenCcpaConsent: Boolean,
+        hasGrantedCcpaConsent: Boolean,
         privacyString: String?
     ) {
-        AppLovinPrivacySettings.setDoNotSell(!hasGivenCcpaConsent, context)
+        PartnerLogController.log(
+            if (hasGrantedCcpaConsent) CCPA_CONSENT_GRANTED
+            else CCPA_CONSENT_DENIED
+        )
+
+
+        AppLovinPrivacySettings.setDoNotSell(!hasGrantedCcpaConsent, context)
     }
 
     /**
@@ -223,6 +236,11 @@ class AppLovinAdapter : PartnerAdapter {
      * @param isSubjectToCoppa True if the user is subject to COPPA, false otherwise.
      */
     override fun setUserSubjectToCoppa(context: Context, isSubjectToCoppa: Boolean) {
+        PartnerLogController.log(
+            if (isSubjectToCoppa) COPPA_SUBJECT
+            else COPPA_NOT_SUBJECT
+        )
+
         AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, context)
     }
 
