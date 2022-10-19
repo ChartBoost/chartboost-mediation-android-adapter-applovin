@@ -15,11 +15,12 @@ repositories {
 }
 
 android {
-    compileSdk 32
+    namespace "com.chartboost.helium.applovinadapter"
+    compileSdk 33
 
     defaultConfig {
         minSdk 21
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "2.11.3.1.0"
         buildConfigField "String", "HELIUM_APPLOVIN_ADAPTER_VERSION", "\"$versionName\""
