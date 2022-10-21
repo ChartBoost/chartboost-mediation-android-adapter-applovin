@@ -15,11 +15,12 @@ repositories {
 }
 
 android {
-    compileSdk 32
+    namespace "com.chartboost.helium.applovinadapter"
+    compileSdk 33
 
     defaultConfig {
         minSdk 21
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "2.11.3.1.0"
         buildConfigField "String", "HELIUM_APPLOVIN_ADAPTER_VERSION", "\"$versionName\""
@@ -55,8 +56,8 @@ dependencies {
     implementation 'com.applovin:applovin-sdk:11.3.1'
 
     //Partner SDK Dependencies
-    implementation 'androidx.appcompat:appcompat:1.4.2'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
 
     //Tests
     testImplementation 'junit:junit:4.13.2'
