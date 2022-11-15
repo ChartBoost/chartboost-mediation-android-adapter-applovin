@@ -29,7 +29,7 @@ android {
         targetSdk 33
         versionCode 1
         // If you touch the following line, don't forget to update scripts/get_rc_version.zsh
-        versionName System.getenv("VERSION_OVERRIDE") ?: "4.11.5.3.0"
+        versionName System.getenv("VERSION_OVERRIDE") ?: "4.11.5.4.0"
         buildConfigField "String", "HELIUM_APPLOVIN_ADAPTER_VERSION", "\"$versionName\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -71,7 +71,7 @@ dependencies {
     remoteImplementation 'com.chartboost:helium:+'
 
     // Partner SDK
-    implementation 'com.applovin:applovin-sdk:11.5.3'
+    implementation 'com.applovin:applovin-sdk:11.5.4'
 
     // Partner SDK Dependencies
     implementation 'androidx.appcompat:appcompat:1.5.1'
