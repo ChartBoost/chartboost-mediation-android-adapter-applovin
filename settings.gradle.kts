@@ -7,5 +7,6 @@ pluginManagement {
 }
 
 rootProject.name = "AppLovinAdapter"
-include ':AppLovinAdapter'
-include ':Helium'
+include(":AppLovinAdapter")
+include(":android-helium-sdk")
+include(":Helium")

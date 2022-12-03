@@ -1,4 +1,4 @@
-VERSION=`grep ' versionName ' AppLovinAdapter/build.gradle | sed 's/^[ \t]*versionName.*?: //g' | sed 's/"//g'`
+VERSION=`grep ' android.defaultConfig.versionName =' AppLovinAdapter/build.gradle.kts | sed 's/^[ \t]*android.defaultConfig.versionName.*?: //g' | sed 's/"//g'`
 RELEASE_CANDIDATE="$VERSION-rc"
 # Fetch from private artifactory all the versions matching RELEASE_CANDIDATE
 curl -sSf -u "$JFROG_USER:$JFROG_PASS" -O 'https://cboost.jfrog.io/artifactory/private-helium/com/chartboost/helium-adapter-applovin/maven-metadata.xml'
