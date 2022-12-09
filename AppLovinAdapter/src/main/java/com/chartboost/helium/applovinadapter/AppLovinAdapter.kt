@@ -176,7 +176,7 @@ class AppLovinAdapter : PartnerAdapter {
                     }
                 } ?: run {
                 PartnerLogController.log(SETUP_FAILED, "No SDK key found.")
-                continuation.resume(Result.failure(HeliumAdException(HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED)))
+                continuation.resume(Result.failure(HeliumAdException(HeliumError.HE_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)))
             }
         }
     }
@@ -370,7 +370,7 @@ class AppLovinAdapter : PartnerAdapter {
                     override fun failedToReceiveAd(errorCode: Int) {
                         PartnerLogController.log(LOAD_FAILED, "$errorCode")
                         continuation.resume(
-                            Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
+                            Result.failure(HeliumAdException(getHeliumError(errorCode)))
                         )
                     }
                 })
@@ -461,15 +461,15 @@ class AppLovinAdapter : PartnerAdapter {
                         override fun failedToReceiveAd(errorCode: Int) {
                             PartnerLogController.log(LOAD_FAILED, "$errorCode")
                             continuation.resume(
-                                Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
+                                Result.failure(HeliumAdException(getHeliumError(errorCode)))
                             )
                         }
                     }
                 )
+            } ?: run {
+                PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
+                continuation.resume(Result.failure(HeliumAdException(HeliumError.HE_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
             }
-        } ?: run {
-            PartnerLogController.log(LOAD_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
         }
     }
 
@@ -511,14 +511,14 @@ class AppLovinAdapter : PartnerAdapter {
                     override fun failedToReceiveAd(errorCode: Int) {
                         PartnerLogController.log(LOAD_FAILED, "$errorCode")
                         continuation.resume(
-                            Result.failure(HeliumAdException(getHeliumErrorCode(errorCode)))
+                            Result.failure(HeliumAdException(getHeliumError(errorCode)))
                         )
                     }
                 })
+            } ?: run {
+                PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
+                continuation.resume(Result.failure(HeliumAdException(HeliumError.HE_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
             }
-        } ?: run {
-            PartnerLogController.log(LOAD_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
         }
     }
 
@@ -570,7 +570,7 @@ class AppLovinAdapter : PartnerAdapter {
             }
         } ?: run {
             PartnerLogController.log(SHOW_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
+            Result.failure(HeliumAdException(HeliumError.HE_SHOW_FAILURE_AD_NOT_FOUND))
         }
     }
 
@@ -668,7 +668,7 @@ class AppLovinAdapter : PartnerAdapter {
             )
         } ?: run {
             PartnerLogController.log(SHOW_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
+            Result.failure(HeliumAdException(HeliumError.HE_SHOW_FAILURE_AD_NOT_FOUND))
         }
     }
 
@@ -689,44 +689,42 @@ class AppLovinAdapter : PartnerAdapter {
                 Result.success(partnerAd)
             } else {
                 PartnerLogController.log(INVALIDATE_FAILED, "Ad is not an AppLovinAdView.")
-                Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
+                Result.failure(HeliumAdException(HeliumError.HE_INVALIDATE_FAILURE_WRONG_RESOURCE_TYPE))
             }
         } ?: run {
             PartnerLogController.log(INVALIDATE_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumErrorCode.INTERNAL))
+            Result.failure(HeliumAdException(HeliumError.HE_INVALIDATE_FAILURE_AD_NOT_FOUND))
         }
     }
 
     /**
-     * Convert a given AppLovin error code into a [HeliumErrorCode].
+     * Convert a given AppLovin error code into a [HeliumError].
      *
      * @param error The AppLovin error code as an [Int].
      *
-     * @return The corresponding [HeliumErrorCode].
+     * @return The corresponding [HeliumError].
      */
-    private fun getHeliumErrorCode(error: Int): HeliumErrorCode {
+    private fun getHeliumError(error: Int): HeliumError {
         return when (error) {
-            AppLovinErrorCodes.NO_FILL -> HeliumErrorCode.NO_FILL
-            AppLovinErrorCodes.NO_NETWORK -> HeliumErrorCode.NO_CONNECTIVITY
-            AppLovinErrorCodes.SDK_DISABLED -> HeliumErrorCode.PARTNER_SDK_NOT_INITIALIZED
+            AppLovinErrorCodes.NO_FILL -> HeliumError.HE_LOAD_FAILURE_NO_FILL
+            AppLovinErrorCodes.NO_NETWORK -> HeliumError.HE_NO_CONNECTIVITY
+            AppLovinErrorCodes.SDK_DISABLED -> HeliumError.HE_INITIALIZATION_SKIPPED
             // AppLovin is currently not part of programmatic bidding with Helium. Only waterfall.
-            AppLovinErrorCodes.INVALID_AD_TOKEN -> HeliumErrorCode.INVALID_BID_PAYLOAD
+            AppLovinErrorCodes.INVALID_AD_TOKEN -> HeliumError.HE_LOAD_FAILURE_AUCTION_NO_BID
             // AppLovin error codes that need to be properly mapped. Currently mapped to PARTNER_ERROR.
-            AppLovinErrorCodes.UNABLE_TO_RENDER_AD,
+            AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> HeliumError.HE_SHOW_FAILURE_UNKNOWN
+            AppLovinErrorCodes.FETCH_AD_TIMEOUT -> HeliumError.HE_LOAD_FAILURE_TIMEOUT
+            AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> HeliumError.HE_LOAD_FAILURE_OUT_OF_STORAGE
+            AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> HeliumError.HE_SHOW_FAILURE_AD_NOT_READY
+            AppLovinErrorCodes.INVALID_RESPONSE -> HeliumError.HE_LOAD_FAILURE_INVALID_BID_RESPONSE
             AppLovinErrorCodes.INVALID_ZONE,
             AppLovinErrorCodes.UNSPECIFIED_ERROR,
-            AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED,
-            AppLovinErrorCodes.INVALID_RESPONSE,
-            AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES,
-            AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES,
-            AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES,
-            AppLovinErrorCodes.FETCH_AD_TIMEOUT,
             AppLovinErrorCodes.INCENTIVIZED_UNKNOWN_SERVER_ERROR,
             AppLovinErrorCodes.INCENTIVIZED_SERVER_TIMEOUT,
             AppLovinErrorCodes.INCENTIVIZED_USER_CLOSED_VIDEO,
-            AppLovinErrorCodes.INVALID_URL -> HeliumErrorCode.PARTNER_ERROR
+            AppLovinErrorCodes.INVALID_URL -> HeliumError.HE_PARTNER_ERROR
             // In case of unknown AppLovin error codes.
-            else -> HeliumErrorCode.INTERNAL
+            else -> HeliumError.HE_INTERNAL_ERROR
         }
     }
 }
