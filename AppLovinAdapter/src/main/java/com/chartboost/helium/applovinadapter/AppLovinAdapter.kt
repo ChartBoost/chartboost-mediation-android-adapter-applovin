@@ -635,7 +635,7 @@ class AppLovinAdapter : PartnerAdapter {
                         percentViewed: Double,
                         fullyWatched: Boolean
                     ) {
-                        // TO-DO: "HB-4119: Need to check if we need to add logic here for rewards."
+                        // TODO: HB-4119: Need to check if we need to add logic here for rewards.
                     }
                 }
 
@@ -643,7 +643,7 @@ class AppLovinAdapter : PartnerAdapter {
                 override fun adDisplayed(appLovinAd: AppLovinAd) {
                     PartnerLogController.log(SHOW_SUCCEEDED)
                     continuation.resume(Result.success(partnerAd))
-                    // TO-DO: "HB-4119: We may need to check if the impression is recorded here."
+                    // TODO: HB-4119: We may need to check if the impression is recorded here.
                 }
 
                 override fun adHidden(appLovinAd: AppLovinAd) {
