@@ -182,20 +182,25 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * AppLovin does not have a public method as to whether GDPR applies. No action required.
-     */
-    override fun setGdprApplies(context: Context, gdprApplies: Boolean) {
-        PartnerLogController.log(if (gdprApplies) GDPR_APPLICABLE else GDPR_NOT_APPLICABLE)
-        // NO-OP
-    }
-
-    /**
-     * Notify AppLovin of user GDPR consent.
+     * Notify the AppLovin SDK of the GDPR applicability and consent status.
      *
      * @param context The current [Context].
-     * @param gdprConsentStatus The user's current GDPR consent status.
+     * @param applies True if GDPR applies, false otherwise.
+     * @param gdprConsentStatus The user's GDPR consent status.
      */
-    override fun setGdprConsentStatus(context: Context, gdprConsentStatus: GdprConsentStatus) {
+    override fun setGdpr(
+        context: Context,
+        applies: Boolean?,
+        gdprConsentStatus: GdprConsentStatus
+    ) {
+        PartnerLogController.log(
+            when (applies) {
+                true -> GDPR_APPLICABLE
+                false -> GDPR_NOT_APPLICABLE
+                else -> GDPR_UNKNOWN
+            }
+        )
+
         PartnerLogController.log(
             when (gdprConsentStatus) {
                 GdprConsentStatus.GDPR_CONSENT_UNKNOWN -> GDPR_CONSENT_UNKNOWN
@@ -204,8 +209,10 @@ class AppLovinAdapter : PartnerAdapter {
             }
         )
 
-        val consentGiven = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
-        AppLovinPrivacySettings.setHasUserConsent(consentGiven, context)
+        // Setting GDPR applicability is a NO-OP because AppLovin does not have a corresponding API.
+
+        val userConsented = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
+        AppLovinPrivacySettings.setHasUserConsent(userConsented, context)
     }
 
     /**
