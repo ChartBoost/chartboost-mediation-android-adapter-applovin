@@ -601,10 +601,7 @@ class AppLovinAdapter : PartnerAdapter {
             val rewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
                 override fun userRewardVerified(appLovinAd: AppLovinAd, map: Map<String, String>) {
                     PartnerLogController.log(DID_REWARD)
-                    heliumListener?.onPartnerAdRewarded(
-                        partnerAd,
-                        Reward(map["amount"]?.toInt() ?: 0, map["currency"].toString())
-                    ) ?: PartnerLogController.log(
+                    heliumListener?.onPartnerAdRewarded(partnerAd) ?: PartnerLogController.log(
                         CUSTOM,
                         "Unable to fire onPartnerAdRewarded for AppLovin adapter."
                     )
