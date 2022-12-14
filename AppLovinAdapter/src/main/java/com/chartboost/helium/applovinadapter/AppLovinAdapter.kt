@@ -120,9 +120,14 @@ class AppLovinAdapter : PartnerAdapter {
     /**
      * Get the AppLovin adapter version.
      *
-     * Note that the version string will be in the format of `Helium.Partner.Partner.Partner.Adapter`,
-     * in which `Helium` is the version of the Helium SDK, `Partner` is the major.minor.patch version
-     * of the partner SDK, and `Adapter` is the version of the adapter.
+     * You may version the adapter using any preferred convention, but it is recommended to apply the
+     * following format if the adapter will be published by Helium:
+     *
+     * Helium.Partner.Adapter
+     *
+     * "Helium" represents the Helium SDK’s major version that is compatible with this adapter. This must be 1 digit.
+     * "Partner" represents the partner SDK’s major.minor.patch.x (where x is optional) version that is compatible with this adapter. This can be 3-4 digits.
+     * "Adapter" represents this adapter’s version (starting with 0), which resets to 0 when the partner SDK’s version changes. This must be 1 digit.
      */
     override val adapterVersion: String
         get() = BuildConfig.HELIUM_APPLOVIN_ADAPTER_VERSION
@@ -285,11 +290,11 @@ class AppLovinAdapter : PartnerAdapter {
         PartnerLogController.log(LOAD_STARTED)
 
         return when (request.format) {
-            AdFormat.INTERSTITIAL -> loadInterstitial(request, partnerAdListener)
-            AdFormat.REWARDED -> loadRewarded(request, partnerAdListener)
-            AdFormat.BANNER -> loadBanner(
-                request,
+            AdFormat.INTERSTITIAL -> loadInterstitialAd(request, partnerAdListener)
+            AdFormat.REWARDED -> loadRewardedAd(request, partnerAdListener)
+            AdFormat.BANNER -> loadBannerAd(
                 context,
+                request,
                 partnerAdListener
             )
         }
@@ -348,9 +353,9 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
-    private suspend fun loadBanner(
-        request: PartnerAdLoadRequest,
+    private suspend fun loadBannerAd(
         context: Context,
+        request: PartnerAdLoadRequest,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
@@ -440,7 +445,7 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
-    private suspend fun loadInterstitial(
+    private suspend fun loadInterstitialAd(
         request: PartnerAdLoadRequest,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
@@ -488,7 +493,7 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
-    private suspend fun loadRewarded(
+    private suspend fun loadRewardedAd(
         request: PartnerAdLoadRequest,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
@@ -708,27 +713,18 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return The corresponding [HeliumError].
      */
-    private fun getHeliumError(error: Int): HeliumError {
-        return when (error) {
-            AppLovinErrorCodes.NO_FILL -> HeliumError.HE_LOAD_FAILURE_NO_FILL
-            AppLovinErrorCodes.NO_NETWORK -> HeliumError.HE_NO_CONNECTIVITY
-            AppLovinErrorCodes.SDK_DISABLED -> HeliumError.HE_INITIALIZATION_SKIPPED
-            // AppLovin is currently not part of programmatic bidding with Helium. Only waterfall.
-            AppLovinErrorCodes.INVALID_AD_TOKEN -> HeliumError.HE_LOAD_FAILURE_AUCTION_NO_BID
-            // AppLovin error codes that need to be properly mapped. Currently mapped to PARTNER_ERROR.
-            AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> HeliumError.HE_SHOW_FAILURE_UNKNOWN
-            AppLovinErrorCodes.FETCH_AD_TIMEOUT -> HeliumError.HE_LOAD_FAILURE_TIMEOUT
-            AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> HeliumError.HE_LOAD_FAILURE_OUT_OF_STORAGE
-            AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> HeliumError.HE_SHOW_FAILURE_AD_NOT_READY
-            AppLovinErrorCodes.INVALID_RESPONSE -> HeliumError.HE_LOAD_FAILURE_INVALID_BID_RESPONSE
-            AppLovinErrorCodes.INVALID_ZONE,
-            AppLovinErrorCodes.UNSPECIFIED_ERROR,
-            AppLovinErrorCodes.INCENTIVIZED_UNKNOWN_SERVER_ERROR,
-            AppLovinErrorCodes.INCENTIVIZED_SERVER_TIMEOUT,
-            AppLovinErrorCodes.INCENTIVIZED_USER_CLOSED_VIDEO,
-            AppLovinErrorCodes.INVALID_URL -> HeliumError.HE_PARTNER_ERROR
-            // In case of unknown AppLovin error codes.
-            else -> HeliumError.HE_INTERNAL_ERROR
-        }
+    private fun getHeliumError(error: Int) = when (error) {
+        AppLovinErrorCodes.NO_FILL -> HeliumError.HE_LOAD_FAILURE_NO_FILL
+        AppLovinErrorCodes.NO_NETWORK -> HeliumError.HE_NO_CONNECTIVITY
+        AppLovinErrorCodes.SDK_DISABLED -> HeliumError.HE_INITIALIZATION_SKIPPED
+        // AppLovin is currently not part of programmatic bidding with Helium. Only waterfall.
+        AppLovinErrorCodes.INVALID_AD_TOKEN -> HeliumError.HE_LOAD_FAILURE_AUCTION_NO_BID
+        AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> HeliumError.HE_SHOW_FAILURE_UNKNOWN
+        AppLovinErrorCodes.FETCH_AD_TIMEOUT -> HeliumError.HE_LOAD_FAILURE_TIMEOUT
+        AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> HeliumError.HE_LOAD_FAILURE_OUT_OF_STORAGE
+        AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> HeliumError.HE_SHOW_FAILURE_AD_NOT_READY
+        AppLovinErrorCodes.INVALID_RESPONSE -> HeliumError.HE_LOAD_FAILURE_INVALID_BID_RESPONSE
+        AppLovinErrorCodes.INVALID_ZONE -> HeliumError.HE_LOAD_FAILURE_INVALID_PARTNER_PLACEMENT
+        else -> HeliumError.HE_PARTNER_ERROR
     }
 }
