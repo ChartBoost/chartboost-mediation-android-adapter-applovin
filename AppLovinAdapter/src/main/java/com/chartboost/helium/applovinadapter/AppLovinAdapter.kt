@@ -724,12 +724,7 @@ class AppLovinAdapter : PartnerAdapter {
         AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> HeliumError.HE_LOAD_FAILURE_OUT_OF_STORAGE
         AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> HeliumError.HE_SHOW_FAILURE_AD_NOT_READY
         AppLovinErrorCodes.INVALID_RESPONSE -> HeliumError.HE_LOAD_FAILURE_INVALID_BID_RESPONSE
-        AppLovinErrorCodes.INVALID_ZONE,
-        AppLovinErrorCodes.UNSPECIFIED_ERROR,
-        AppLovinErrorCodes.INCENTIVIZED_UNKNOWN_SERVER_ERROR,
-        AppLovinErrorCodes.INCENTIVIZED_SERVER_TIMEOUT,
-        AppLovinErrorCodes.INCENTIVIZED_USER_CLOSED_VIDEO,
-        AppLovinErrorCodes.INVALID_URL -> HeliumError.HE_PARTNER_ERROR
-        else -> HeliumError.HE_INTERNAL_ERROR
+        AppLovinErrorCodes.INVALID_ZONE -> HeliumError.HE_LOAD_FAILURE_INVALID_PARTNER_PLACEMENT
+        else -> HeliumError.HE_PARTNER_ERROR
     }
 }
