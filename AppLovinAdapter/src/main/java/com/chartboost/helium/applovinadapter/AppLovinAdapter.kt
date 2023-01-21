@@ -20,6 +20,9 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -164,7 +167,10 @@ class AppLovinAdapter : PartnerAdapter {
         PartnerLogController.log(SETUP_STARTED)
 
         return suspendCoroutine { continuation ->
-            partnerConfiguration.credentials.optString("sdk_key").trim().takeIf { it.isNotEmpty() }
+            Json.decodeFromJsonElement<String>(
+                (partnerConfiguration.credentials as JsonObject).getValue("sdk_key")
+            ).trim()
+                .takeIf { it.isNotEmpty() }
                 ?.let { sdkKey ->
                     context.applicationContext?.let {
                         // Save the application context for later usage.

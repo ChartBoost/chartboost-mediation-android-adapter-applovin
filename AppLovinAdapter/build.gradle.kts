@@ -10,6 +10,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
     id("com.jfrog.artifactory")
+    id("kotlinx-serialization")
 }
 
 repositories {
@@ -72,6 +73,7 @@ dependencies {
     // Partner SDK Dependencies
     implementation("androidx.appcompat:appcompat:1.5.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 }
 
 artifactory {
