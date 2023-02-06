@@ -5,7 +5,7 @@
  * license that can be found in the LICENSE file.
  */
 
-package com.chartboost.helium.applovinadapter
+package com.chartboost.mediation.applovinadapter
 
 import android.content.Context
 import android.provider.Settings
@@ -29,7 +29,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * The Helium AppLovin SDK adapter.
+ * The Chartboost Mediation AppLovin SDK adapter.
  */
 class AppLovinAdapter : PartnerAdapter {
     companion object {
@@ -117,7 +117,7 @@ class AppLovinAdapter : PartnerAdapter {
     private var appContext: Context? = null
 
     /**
-     * A map of Helium's listeners for the corresponding Helium placements.
+     * A map of Chartboost Mediation's listeners for the corresponding Chartboost placements.
      */
     private val listeners = mutableMapOf<String, PartnerAdListener>()
 
@@ -131,16 +131,16 @@ class AppLovinAdapter : PartnerAdapter {
      * Get the AppLovin adapter version.
      *
      * You may version the adapter using any preferred convention, but it is recommended to apply the
-     * following format if the adapter will be published by Helium:
+     * following format if the adapter will be published by Chartboost Mediation:
      *
-     * Helium.Partner.Adapter
+     * Chartboost Mediation.Partner.Adapter
      *
-     * "Helium" represents the Helium SDK’s major version that is compatible with this adapter. This must be 1 digit.
+     * "Chartboost Mediation" represents the Chartboost Mediation SDK’s major version that is compatible with this adapter. This must be 1 digit.
      * "Partner" represents the partner SDK’s major.minor.patch.x (where x is optional) version that is compatible with this adapter. This can be 3-4 digits.
      * "Adapter" represents this adapter’s version (starting with 0), which resets to 0 when the partner SDK’s version changes. This must be 1 digit.
      */
     override val adapterVersion: String
-        get() = BuildConfig.HELIUM_APPLOVIN_ADAPTER_VERSION
+        get() = BuildConfig.CHARTBOOST_MEDIATION_APPLOVIN_ADAPTER_VERSION
 
     /**
      * Get the partner name for internal uses.
@@ -184,7 +184,7 @@ class AppLovinAdapter : PartnerAdapter {
                             it
                         ).also { sdk ->
                             sdk.initializeSdk {
-                                sdk.mediationProvider = "Helium"
+                                sdk.mediationProvider = "Chartboost"
                                 sdk.setPluginVersion(adapterVersion)
                                 continuation.resume(
                                     Result.success(PartnerLogController.log(SETUP_SUCCEEDED))
@@ -194,7 +194,7 @@ class AppLovinAdapter : PartnerAdapter {
                     }
                 } ?: run {
                 PartnerLogController.log(SETUP_FAILED, "No SDK key found.")
-                continuation.resume(Result.failure(HeliumAdException(HeliumError.HE_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)))
+                continuation.resume(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)))
             }
         }
     }
@@ -291,7 +291,7 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @param context The current [Context].
      * @param request An [PartnerAdLoadRequest] instance containing relevant data for the current ad load call.
-     * @param partnerAdListener A [PartnerAdListener] to notify Helium of ad events.
+     * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
@@ -323,7 +323,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override suspend fun show(context: Context, partnerAd: PartnerAd): Result<PartnerAd> {
         PartnerLogController.log(SHOW_STARTED)
-        val heliumListener = listeners.remove(partnerAd.request.heliumPlacement)
+        val partnerAdListener = listeners.remove(partnerAd.request.chartboostPlacement)
 
         return when (partnerAd.request.format) {
             // Banner ads don't have their own show.
@@ -331,8 +331,8 @@ class AppLovinAdapter : PartnerAdapter {
                 PartnerLogController.log(SHOW_SUCCEEDED)
                 Result.success(partnerAd)
             }
-            AdFormat.INTERSTITIAL -> showInterstitialAd(context, partnerAd, heliumListener)
-            AdFormat.REWARDED -> showRewardedAd(context, partnerAd, heliumListener)
+            AdFormat.INTERSTITIAL -> showInterstitialAd(context, partnerAd, partnerAdListener)
+            AdFormat.REWARDED -> showRewardedAd(context, partnerAd, partnerAdListener)
         }
     }
 
@@ -345,7 +345,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override suspend fun invalidate(partnerAd: PartnerAd): Result<PartnerAd> {
         PartnerLogController.log(INVALIDATE_STARTED)
-        listeners.remove(partnerAd.request.heliumPlacement)
+        listeners.remove(partnerAd.request.chartboostPlacement)
 
         // Only invalidate banners as there are no explicit methods to invalidate the other formats.
         return when (partnerAd.request.format) {
@@ -362,7 +362,7 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @param context The current [Context].
      * @param request An [PartnerAdLoadRequest] instance containing relevant data for the current ad load call.
-     * @param partnerAdListener A [PartnerAdListener] to notify Helium of ad events.
+     * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
@@ -395,7 +395,7 @@ class AppLovinAdapter : PartnerAdapter {
                     override fun failedToReceiveAd(errorCode: Int) {
                         PartnerLogController.log(LOAD_FAILED, "$errorCode")
                         continuation.resume(
-                            Result.failure(HeliumAdException(getHeliumError(errorCode)))
+                            Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
                         )
                     }
                 })
@@ -454,7 +454,7 @@ class AppLovinAdapter : PartnerAdapter {
      * Attempt to load an AppLovin interstitial ad.
      *
      * @param request An [PartnerAdLoadRequest] instance containing data to load the ad with.
-     * @param partnerAdListener A [PartnerAdListener] to notify Helium of ad events.
+     * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
@@ -465,7 +465,7 @@ class AppLovinAdapter : PartnerAdapter {
         return suspendCoroutine { continuation ->
             appLovinSdk?.let {
                 // Save listener for later usage.
-                listeners[request.heliumPlacement] = partnerAdListener
+                listeners[request.chartboostPlacement] = partnerAdListener
 
                 it.adService.loadNextAdForZoneId(
                     request.partnerPlacement,
@@ -486,14 +486,14 @@ class AppLovinAdapter : PartnerAdapter {
                         override fun failedToReceiveAd(errorCode: Int) {
                             PartnerLogController.log(LOAD_FAILED, "$errorCode")
                             continuation.resume(
-                                Result.failure(HeliumAdException(getHeliumError(errorCode)))
+                                Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
                             )
                         }
                     }
                 )
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
-                continuation.resume(Result.failure(HeliumAdException(HeliumError.HE_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
+                continuation.resume(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
             }
         }
     }
@@ -502,7 +502,7 @@ class AppLovinAdapter : PartnerAdapter {
      * Attempt to load an AppLovin rewarded ad.
      *
      * @param request The [PartnerAdLoadRequest] containing relevant data for the current ad load call.
-     * @param partnerAdListener A [PartnerAdListener] to notify Helium of ad events.
+     * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully loaded, Result.failure(Exception) otherwise.
      */
@@ -514,7 +514,7 @@ class AppLovinAdapter : PartnerAdapter {
             appLovinSdk?.let {
 
                 // Save listener for later usage.
-                listeners[request.heliumPlacement] = partnerAdListener
+                listeners[request.chartboostPlacement] = partnerAdListener
 
                 val rewardedAd =
                     AppLovinIncentivizedInterstitial.create(request.partnerPlacement, it)
@@ -536,13 +536,13 @@ class AppLovinAdapter : PartnerAdapter {
                     override fun failedToReceiveAd(errorCode: Int) {
                         PartnerLogController.log(LOAD_FAILED, "$errorCode")
                         continuation.resume(
-                            Result.failure(HeliumAdException(getHeliumError(errorCode)))
+                            Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
                         )
                     }
                 })
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
-                continuation.resume(Result.failure(HeliumAdException(HeliumError.HE_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
+                continuation.resume(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
             }
         }
     }
@@ -552,14 +552,14 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @param context The current [Context].
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
-     * @param heliumListener A [PartnerAdListener] to notify Helium of ad events.
+     * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully shown, Result.failure(Exception) otherwise.
      */
     private suspend fun showInterstitialAd(
         context: Context,
         partnerAd: PartnerAd,
-        heliumListener: PartnerAdListener?
+        partnerAdListener: PartnerAdListener?
     ): Result<PartnerAd> {
         return (partnerAd.ad as? AppLovinAd)?.let {
             suspendCoroutine { continuation ->
@@ -575,7 +575,7 @@ class AppLovinAdapter : PartnerAdapter {
 
                     override fun adHidden(ad: AppLovinAd?) {
                         PartnerLogController.log(DID_DISMISS)
-                        heliumListener?.onPartnerAdDismissed(partnerAd, null)
+                        partnerAdListener?.onPartnerAdDismissed(partnerAd, null)
                             ?: PartnerLogController.log(
                                 CUSTOM,
                                 "Unable to fire onPartnerAdDismissed for AppLovin adapter."
@@ -585,7 +585,7 @@ class AppLovinAdapter : PartnerAdapter {
 
                 interstitialAd.setAdClickListener {
                     PartnerLogController.log(DID_CLICK)
-                    heliumListener?.onPartnerAdClicked(partnerAd) ?: PartnerLogController.log(
+                    partnerAdListener?.onPartnerAdClicked(partnerAd) ?: PartnerLogController.log(
                         CUSTOM,
                         "Unable to fire onPartnerAdClicked for AppLovin adapter."
                     )
@@ -595,7 +595,7 @@ class AppLovinAdapter : PartnerAdapter {
             }
         } ?: run {
             PartnerLogController.log(SHOW_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumError.HE_SHOW_FAILURE_AD_NOT_FOUND))
+            Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_FOUND))
         }
     }
 
@@ -604,14 +604,14 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @param context The current [Context].
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
-     * @param heliumListener A [PartnerAdListener] to notify Helium of ad events.
+     * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully shown, Result.failure(Exception) otherwise.
      */
     private suspend fun showRewardedAd(
         context: Context,
         partnerAd: PartnerAd,
-        heliumListener: PartnerAdListener?
+        partnerAdListener: PartnerAdListener?
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
             val rewardedAd = AppLovinIncentivizedInterstitial.create(appLovinSdk)
@@ -619,7 +619,7 @@ class AppLovinAdapter : PartnerAdapter {
             val rewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
                 override fun userRewardVerified(appLovinAd: AppLovinAd, map: Map<String, String>) {
                     PartnerLogController.log(DID_REWARD)
-                    heliumListener?.onPartnerAdRewarded(partnerAd) ?: PartnerLogController.log(
+                    partnerAdListener?.onPartnerAdRewarded(partnerAd) ?: PartnerLogController.log(
                         CUSTOM,
                         "Unable to fire onPartnerAdRewarded for AppLovin adapter."
                     )
@@ -663,7 +663,7 @@ class AppLovinAdapter : PartnerAdapter {
 
                 override fun adHidden(appLovinAd: AppLovinAd) {
                     PartnerLogController.log(DID_DISMISS)
-                    heliumListener?.onPartnerAdDismissed(partnerAd, null)
+                    partnerAdListener?.onPartnerAdDismissed(partnerAd, null)
                         ?: PartnerLogController.log(
                             CUSTOM,
                             "Unable to fire onPartnerAdDismissed for AppLovin adapter."
@@ -674,7 +674,7 @@ class AppLovinAdapter : PartnerAdapter {
             val clickListener =
                 AppLovinAdClickListener {
                     PartnerLogController.log(DID_CLICK)
-                    heliumListener?.onPartnerAdClicked(partnerAd) ?: PartnerLogController.log(
+                    partnerAdListener?.onPartnerAdClicked(partnerAd) ?: PartnerLogController.log(
                         CUSTOM,
                         "Unable to fire onPartnerAdClicked for AppLovin adapter."
                     )
@@ -690,7 +690,7 @@ class AppLovinAdapter : PartnerAdapter {
             )
         } ?: run {
             PartnerLogController.log(SHOW_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumError.HE_SHOW_FAILURE_AD_NOT_FOUND))
+            Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_FOUND))
         }
     }
 
@@ -711,33 +711,33 @@ class AppLovinAdapter : PartnerAdapter {
                 Result.success(partnerAd)
             } else {
                 PartnerLogController.log(INVALIDATE_FAILED, "Ad is not an AppLovinAdView.")
-                Result.failure(HeliumAdException(HeliumError.HE_INVALIDATE_FAILURE_WRONG_RESOURCE_TYPE))
+                Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INVALIDATE_FAILURE_WRONG_RESOURCE_TYPE))
             }
         } ?: run {
             PartnerLogController.log(INVALIDATE_FAILED, "Ad is null.")
-            Result.failure(HeliumAdException(HeliumError.HE_INVALIDATE_FAILURE_AD_NOT_FOUND))
+            Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INVALIDATE_FAILURE_AD_NOT_FOUND))
         }
     }
 
     /**
-     * Convert a given AppLovin error code into a [HeliumError].
+     * Convert a given AppLovin error code into a [ChartboostMediationError].
      *
      * @param error The AppLovin error code as an [Int].
      *
-     * @return The corresponding [HeliumError].
+     * @return The corresponding [ChartboostMediationError].
      */
-    private fun getHeliumError(error: Int) = when (error) {
-        AppLovinErrorCodes.NO_FILL -> HeliumError.HE_LOAD_FAILURE_NO_FILL
-        AppLovinErrorCodes.NO_NETWORK -> HeliumError.HE_NO_CONNECTIVITY
-        AppLovinErrorCodes.SDK_DISABLED -> HeliumError.HE_INITIALIZATION_SKIPPED
-        // AppLovin is currently not part of programmatic bidding with Helium. Only waterfall.
-        AppLovinErrorCodes.INVALID_AD_TOKEN -> HeliumError.HE_LOAD_FAILURE_AUCTION_NO_BID
-        AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> HeliumError.HE_SHOW_FAILURE_UNKNOWN
-        AppLovinErrorCodes.FETCH_AD_TIMEOUT -> HeliumError.HE_LOAD_FAILURE_TIMEOUT
-        AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> HeliumError.HE_LOAD_FAILURE_OUT_OF_STORAGE
-        AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> HeliumError.HE_SHOW_FAILURE_AD_NOT_READY
-        AppLovinErrorCodes.INVALID_RESPONSE -> HeliumError.HE_LOAD_FAILURE_INVALID_BID_RESPONSE
-        AppLovinErrorCodes.INVALID_ZONE -> HeliumError.HE_LOAD_FAILURE_INVALID_PARTNER_PLACEMENT
-        else -> HeliumError.HE_PARTNER_ERROR
+    private fun getChartboostMediationError(error: Int) = when (error) {
+        AppLovinErrorCodes.NO_FILL -> ChartboostMediationError.CM_LOAD_FAILURE_NO_FILL
+        AppLovinErrorCodes.NO_NETWORK -> ChartboostMediationError.CM_NO_CONNECTIVITY
+        AppLovinErrorCodes.SDK_DISABLED -> ChartboostMediationError.CM_INITIALIZATION_SKIPPED
+        // AppLovin is currently not part of programmatic bidding with Chartboost Mediation. Only waterfall.
+        AppLovinErrorCodes.INVALID_AD_TOKEN -> ChartboostMediationError.CM_LOAD_FAILURE_AUCTION_NO_BID
+        AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> ChartboostMediationError.CM_SHOW_FAILURE_UNKNOWN
+        AppLovinErrorCodes.FETCH_AD_TIMEOUT -> ChartboostMediationError.CM_LOAD_FAILURE_TIMEOUT
+        AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> ChartboostMediationError.CM_LOAD_FAILURE_OUT_OF_STORAGE
+        AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_READY
+        AppLovinErrorCodes.INVALID_RESPONSE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_BID_RESPONSE
+        AppLovinErrorCodes.INVALID_ZONE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_PARTNER_PLACEMENT
+        else -> ChartboostMediationError.CM_PARTNER_ERROR
     }
 }
