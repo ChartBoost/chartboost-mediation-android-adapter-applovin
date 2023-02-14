@@ -84,8 +84,8 @@ artifactory {
 
     publish {
         repository {
-            // If this is a release build, push to the public "helium" artifactory.
-            // Otherwise, push to the "private-helium" artifactory.
+            // If this is a release build, push to the public "chartboost-mediation" artifactory.
+            // Otherwise, push to the "private-chartboost-mediation" artifactory.
             val isReleaseBuild = "true" == System.getenv("CHARTBOOST_MEDIATION_IS_RELEASE")
             if (isReleaseBuild) {
                 setRepoKey("chartboost-mediation")
