@@ -310,7 +310,7 @@ class AppLovinAdapter : PartnerAdapter {
                 request,
                 partnerAdListener
             )
-            AdFormat.REWARDED_INTERSTITIAL -> {
+            else -> {
                 PartnerLogController.log(LOAD_FAILED)
                 Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_UNSUPPORTED_AD_FORMAT))
             }
@@ -337,7 +337,7 @@ class AppLovinAdapter : PartnerAdapter {
             }
             AdFormat.INTERSTITIAL -> showInterstitialAd(context, partnerAd, partnerAdListener)
             AdFormat.REWARDED -> showRewardedAd(context, partnerAd, partnerAdListener)
-            AdFormat.REWARDED_INTERSTITIAL -> {
+            else -> {
                 PartnerLogController.log(LOAD_FAILED)
                 Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_UNSUPPORTED_AD_FORMAT))
             }
