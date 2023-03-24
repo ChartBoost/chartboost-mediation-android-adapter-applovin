@@ -380,7 +380,16 @@ class AppLovinAdapter : PartnerAdapter {
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
         return suspendCoroutine { continuation ->
+            if (appLovinSdk == null) {
+                PartnerLogController.log(LOAD_FAILED)
+                continuation.resume(
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_NOT_INITIALIZED))
+                )
+                return@suspendCoroutine
+            }
+
             AppLovinAdView(
+                appLovinSdk,
                 getAppLovinAdSize(request.size),
                 request.partnerPlacement,
                 context
