@@ -3,6 +3,9 @@
 Note the first digit of every adapter version corresponds to the major version of the Chartboost Mediation SDK compatible with that adapter. 
 Adapters are compatible with any Chartboost Mediation SDK version within that major version.
 
+### 4.11.8.1.2
+- Fix banner ad requests failing when the AppLovin SDK key is not defined in the AndroidManifest. 
+
 ### 4.11.8.1.1
 - Updated the dependency on Chartboost Mediation SDK to 4.0.0.
 
