@@ -117,7 +117,7 @@ class AppLovinAdapter : PartnerAdapter {
     private var appContext: Context? = null
 
     /**
-     * A map of Chartboost Mediation's listeners for the corresponding Chartboost placements.
+     * A map of Chartboost Mediation's listeners for the corresponding load identifier.
      */
     private val listeners = mutableMapOf<String, PartnerAdListener>()
 
@@ -310,6 +310,10 @@ class AppLovinAdapter : PartnerAdapter {
                 request,
                 partnerAdListener
             )
+            else -> {
+                PartnerLogController.log(LOAD_FAILED)
+                Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_UNSUPPORTED_AD_FORMAT))
+            }
         }
     }
 
@@ -323,7 +327,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override suspend fun show(context: Context, partnerAd: PartnerAd): Result<PartnerAd> {
         PartnerLogController.log(SHOW_STARTED)
-        val partnerAdListener = listeners.remove(partnerAd.request.chartboostPlacement)
+        val partnerAdListener = listeners.remove(partnerAd.request.identifier)
 
         return when (partnerAd.request.format) {
             // Banner ads don't have their own show.
@@ -333,6 +337,10 @@ class AppLovinAdapter : PartnerAdapter {
             }
             AdFormat.INTERSTITIAL -> showInterstitialAd(context, partnerAd, partnerAdListener)
             AdFormat.REWARDED -> showRewardedAd(context, partnerAd, partnerAdListener)
+            else -> {
+                PartnerLogController.log(SHOW_FAILED)
+                Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_UNSUPPORTED_AD_FORMAT))
+            }
         }
     }
 
@@ -345,7 +353,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override suspend fun invalidate(partnerAd: PartnerAd): Result<PartnerAd> {
         PartnerLogController.log(INVALIDATE_STARTED)
-        listeners.remove(partnerAd.request.chartboostPlacement)
+        listeners.remove(partnerAd.request.identifier)
 
         // Only invalidate banners as there are no explicit methods to invalidate the other formats.
         return when (partnerAd.request.format) {
@@ -465,7 +473,7 @@ class AppLovinAdapter : PartnerAdapter {
         return suspendCoroutine { continuation ->
             appLovinSdk?.let {
                 // Save listener for later usage.
-                listeners[request.chartboostPlacement] = partnerAdListener
+                listeners[request.identifier] = partnerAdListener
 
                 it.adService.loadNextAdForZoneId(
                     request.partnerPlacement,
@@ -514,7 +522,7 @@ class AppLovinAdapter : PartnerAdapter {
             appLovinSdk?.let {
 
                 // Save listener for later usage.
-                listeners[request.chartboostPlacement] = partnerAdListener
+                listeners[request.identifier] = partnerAdListener
 
                 val rewardedAd =
                     AppLovinIncentivizedInterstitial.create(request.partnerPlacement, it)
