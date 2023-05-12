@@ -633,13 +633,15 @@ class AppLovinAdapter : PartnerAdapter {
         return suspendCoroutine { continuation ->
             val rewardedAd = AppLovinIncentivizedInterstitial.create(appLovinSdk)
 
+            var isUserVerified: Boolean? = null
+
             val rewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
-                override fun userRewardVerified(appLovinAd: AppLovinAd, map: Map<String, String>) {
-                    PartnerLogController.log(DID_REWARD)
-                    partnerAdListener?.onPartnerAdRewarded(partnerAd) ?: PartnerLogController.log(
-                        CUSTOM,
-                        "Unable to fire onPartnerAdRewarded for AppLovin adapter."
-                    )
+                override fun userRewardVerified(
+                    appLovinAd: AppLovinAd,
+                    map: Map<String, String>
+                ) {
+                    // user should be granted the reward upon completion
+                    isUserVerified = true
                 }
 
                 override fun userOverQuota(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
@@ -647,9 +649,15 @@ class AppLovinAdapter : PartnerAdapter {
                     appLovinAd: AppLovinAd,
                     map: Map<String, String>?
                 ) {
+                    // user has been denylisted and should not be granted a reward
+                    isUserVerified = false
                 }
 
-                override fun validationRequestFailed(appLovinAd: AppLovinAd, responseCode: Int) {
+                override fun validationRequestFailed(
+                    appLovinAd: AppLovinAd,
+                    responseCode: Int
+                ) {
+                    // user could not be verified
                     PartnerLogController.log(
                         CUSTOM,
                         "validationRequestFailed for $partnerAd. Error: $responseCode"
@@ -668,6 +676,22 @@ class AppLovinAdapter : PartnerAdapter {
                         fullyWatched: Boolean
                     ) {
                         // TODO: HB-4119: Need to check if we need to add logic here for rewards.
+                        // Only stop the reward if the user was explicity deny listed by AppLovin
+                        if (isUserVerified == false) {
+                            PartnerLogController.log(
+                                CUSTOM,
+                                "Unable to reward due to user being denylisted by AppLovin."
+                            )
+                            return
+                        }
+
+                        PartnerLogController.log(DID_REWARD)
+                        partnerAdListener?.onPartnerAdRewarded(partnerAd)
+                            ?: PartnerLogController.log(
+                                CUSTOM,
+                                "Unable to fire onPartnerAdRewarded for AppLovin adapter."
+                            )
+
                     }
                 }
 
