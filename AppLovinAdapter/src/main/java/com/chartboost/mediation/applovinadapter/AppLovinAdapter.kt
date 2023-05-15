@@ -675,7 +675,6 @@ class AppLovinAdapter : PartnerAdapter {
                         percentViewed: Double,
                         fullyWatched: Boolean
                     ) {
-                        // TODO: HB-4119: Need to check if we need to add logic here for rewards.
                         // Only stop the reward if the user was explicity deny listed by AppLovin
                         if (isUserVerified == false) {
                             PartnerLogController.log(
