@@ -676,28 +676,30 @@ class AppLovinAdapter : PartnerAdapter {
                         fullyWatched: Boolean
                     ) {
                         // Only stop the reward if the user was explicity deny listed by AppLovin
-                        if (isUserVerified == false) {
-                            PartnerLogController.log(
-                                CUSTOM,
-                                "Unable to reward due to user being denylisted by AppLovin."
-                            )
-                            return
-                        }
+                        when {
+                            isUserVerified == false -> {
+                                PartnerLogController.log(
+                                    CUSTOM,
+                                    "Unable to reward due to user being denylisted by AppLovin."
+                                )
+                            }
 
-                        if (!fullyWatched) {
-                            PartnerLogController.log(
-                                CUSTOM,
-                                "Unable to reward due to video not being fully watched."
-                            )
-                            return
-                        }
+                            !fullyWatched -> {
+                                PartnerLogController.log(
+                                    CUSTOM,
+                                    "Unable to reward due to video not being fully watched."
+                                )
+                            }
 
-                        PartnerLogController.log(DID_REWARD)
-                        partnerAdListener?.onPartnerAdRewarded(partnerAd)
-                            ?: PartnerLogController.log(
-                                CUSTOM,
-                                "Unable to fire onPartnerAdRewarded for AppLovin adapter."
-                            )
+                            else -> {
+                                PartnerLogController.log(DID_REWARD)
+                                partnerAdListener?.onPartnerAdRewarded(partnerAd)
+                                    ?: PartnerLogController.log(
+                                        CUSTOM,
+                                        "Unable to fire onPartnerAdRewarded for AppLovin adapter."
+                                    )
+                            }
+                        }
                     }
                 }
 
