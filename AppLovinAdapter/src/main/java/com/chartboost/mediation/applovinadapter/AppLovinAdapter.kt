@@ -685,13 +685,20 @@ class AppLovinAdapter : PartnerAdapter {
                             return
                         }
 
+                        if (!fullyWatched) {
+                            PartnerLogController.log(
+                                CUSTOM,
+                                "Unable to reward due to video not being fully watched."
+                            )
+                            return
+                        }
+
                         PartnerLogController.log(DID_REWARD)
                         partnerAdListener?.onPartnerAdRewarded(partnerAd)
                             ?: PartnerLogController.log(
                                 CUSTOM,
                                 "Unable to fire onPartnerAdRewarded for AppLovin adapter."
                             )
-
                     }
                 }
 
