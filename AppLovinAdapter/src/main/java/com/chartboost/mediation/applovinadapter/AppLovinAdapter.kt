@@ -104,6 +104,21 @@ class AppLovinAdapter : PartnerAdapter {
                 "AppLovin verbose logging is ${if (enabled) "enabled" else "disabled"}."
             )
         }
+
+        /**
+         * Enable/disable AppLovin's location sharing.
+         *
+         * @param context The current [Context].
+         * @param enabled True to enable location sharing, false otherwise.
+         */
+        public fun setLocationSharing(context: Context, enabled: Boolean) {
+            AppLovinSdk.getInstance(context).settings.isLocationCollectionEnabled = enabled
+
+            PartnerLogController.log(
+                CUSTOM,
+                "AppLovin location sharing is ${if (enabled) "enabled" else "disabled"}."
+            )
+        }
     }
 
     /**
