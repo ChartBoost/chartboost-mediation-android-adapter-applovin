@@ -3,8 +3,11 @@
 Note the first digit of every adapter version corresponds to the major version of the Chartboost Mediation SDK compatible with that adapter. 
 Adapters are compatible with any Chartboost Mediation SDK version within that major version.
 
-### 4.11.8.2.1
+### 4.11.8.2.2
 - Add ProGuard rules.
+
+### 4.11.8.2.1
+- Ensured rewarded callbacks occur in the correct order.
 
 ### 4.11.8.2.0
 - This version of the adapter has been certified with AppLovin SDK 11.8.2.
