@@ -3,6 +3,9 @@
 Note the first digit of every adapter version corresponds to the major version of the Chartboost Mediation SDK compatible with that adapter. 
 Adapters are compatible with any Chartboost Mediation SDK version within that major version.
 
+### 4.11.8.2.3
+- Added setting to enable/disable location sharing with the AppLovin SDK. See the [AppLovin documentation](https://dash.applovin.com/documentation/mediation/android/getting-started/data-passing#location-passing) for more information.
+
 ### 4.11.8.2.2
 - Add ProGuard rules.
 
