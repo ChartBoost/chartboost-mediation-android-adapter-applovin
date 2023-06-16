@@ -602,6 +602,11 @@ class AppLovinAdapter : PartnerAdapter {
                     AppLovinAdDisplayListener {
                     override fun adDisplayed(ad: AppLovinAd?) {
                         PartnerLogController.log(SHOW_SUCCEEDED)
+                        partnerAdListener?.onPartnerAdImpression(partnerAd)
+                            ?: PartnerLogController.log(
+                                CUSTOM,
+                                "Unable to fire onPartnerAdImpression for AppLovin adapter."
+                            )
                         continuation.resume(Result.success(partnerAd))
                     }
 
@@ -721,6 +726,11 @@ class AppLovinAdapter : PartnerAdapter {
             val displayListener: AppLovinAdDisplayListener = object : AppLovinAdDisplayListener {
                 override fun adDisplayed(appLovinAd: AppLovinAd) {
                     PartnerLogController.log(SHOW_SUCCEEDED)
+                    partnerAdListener?.onPartnerAdImpression(partnerAd)
+                        ?: PartnerLogController.log(
+                            CUSTOM,
+                            "Unable to fire onPartnerAdImpression for AppLovin adapter."
+                        )
                     continuation.resume(Result.success(partnerAd))
                     // TODO: HB-4119: We may need to check if the impression is recorded here.
                 }
