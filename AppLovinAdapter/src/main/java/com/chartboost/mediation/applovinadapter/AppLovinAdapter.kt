@@ -27,7 +27,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * The Chartboost Mediation AppLovin SDK adapter.
@@ -749,15 +748,11 @@ class AppLovinAdapter : PartnerAdapter {
                 }
 
             val displayListener: AppLovinAdDisplayListener = object : AppLovinAdDisplayListener {
-                fun resumeOnce(result: Result<PartnerAd>) {
-                    if (continuation.isActive) {
-                        continuation.resume(result)
-                    }
-                }
-
                 override fun adDisplayed(appLovinAd: AppLovinAd) {
                     PartnerLogController.log(SHOW_SUCCEEDED)
-                    resumeOnce(Result.success(partnerAd))
+                    if (continuation.isActive) {
+                        continuation.resume(Result.success(partnerAd))
+                    }
                     // TODO: HB-4119: We may need to check if the impression is recorded here.
                 }
 
