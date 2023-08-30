@@ -623,15 +623,12 @@ class AppLovinAdapter : PartnerAdapter {
 
                 interstitialAd.setAdDisplayListener(object :
                     AppLovinAdDisplayListener {
-                    fun resumeOnce(result: Result<PartnerAd>) {
-                        if (continuation.isActive) {
-                            continuation.resume(result)
-                        }
-                    }
 
                     override fun adDisplayed(ad: AppLovinAd?) {
                         PartnerLogController.log(SHOW_SUCCEEDED)
-                        resumeOnce(Result.success(partnerAd))
+                        if (continuation.isActive) {
+                            continuation.resume(Result.success(partnerAd))
+                        }
                     }
 
                     override fun adHidden(ad: AppLovinAd?) {
