@@ -21,12 +21,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * The Chartboost Mediation AppLovin SDK adapter.
@@ -183,7 +183,13 @@ class AppLovinAdapter : PartnerAdapter {
     ): Result<Unit> {
         PartnerLogController.log(SETUP_STARTED)
 
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
+            fun resumeOnce(result: Result<Unit>) {
+                if (continuation.isActive) {
+                    continuation.resume(result)
+                }
+            }
+
             Json.decodeFromJsonElement<String>(
                 (partnerConfiguration.credentials as JsonObject).getValue("sdk_key")
             ).trim()
@@ -201,7 +207,7 @@ class AppLovinAdapter : PartnerAdapter {
                             sdk.initializeSdk {
                                 sdk.mediationProvider = "Chartboost"
                                 sdk.setPluginVersion(adapterVersion)
-                                continuation.resume(
+                                resumeOnce(
                                     Result.success(PartnerLogController.log(SETUP_SUCCEEDED))
                                 )
                             }
@@ -209,7 +215,7 @@ class AppLovinAdapter : PartnerAdapter {
                     }
                 } ?: run {
                 PartnerLogController.log(SETUP_FAILED, "No SDK key found.")
-                continuation.resume(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)))
+                resumeOnce(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)))
             }
         }
     }
@@ -394,13 +400,18 @@ class AppLovinAdapter : PartnerAdapter {
         request: PartnerAdLoadRequest,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
+            fun resumeOnce(result: Result<PartnerAd>) {
+                if (continuation.isActive) {
+                    continuation.resume(result)
+                }
+            }
             if (appLovinSdk == null) {
                 PartnerLogController.log(LOAD_FAILED)
-                continuation.resume(
+                resumeOnce(
                     Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_NOT_INITIALIZED))
                 )
-                return@suspendCoroutine
+                return@suspendCancellableCoroutine
             }
 
             AppLovinAdView(
@@ -413,7 +424,7 @@ class AppLovinAdapter : PartnerAdapter {
                 setAdLoadListener(object : AppLovinAdLoadListener {
                     override fun adReceived(ad: AppLovinAd) {
                         PartnerLogController.log(LOAD_SUCCEEDED)
-                        continuation.resume(
+                        resumeOnce(
                             Result.success(
                                 PartnerAd(
                                     ad = this@apply,
@@ -426,7 +437,7 @@ class AppLovinAdapter : PartnerAdapter {
 
                     override fun failedToReceiveAd(errorCode: Int) {
                         PartnerLogController.log(LOAD_FAILED, "$errorCode")
-                        continuation.resume(
+                        resumeOnce(
                             Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
                         )
                     }
@@ -494,7 +505,13 @@ class AppLovinAdapter : PartnerAdapter {
         request: PartnerAdLoadRequest,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
+            fun resumeOnce(result: Result<PartnerAd>) {
+                if (continuation.isActive) {
+                    continuation.resume(result)
+                }
+            }
+
             appLovinSdk?.let {
                 // Save listener for later usage.
                 listeners[request.identifier] = partnerAdListener
@@ -504,7 +521,7 @@ class AppLovinAdapter : PartnerAdapter {
                     object : AppLovinAdLoadListener {
                         override fun adReceived(ad: AppLovinAd?) {
                             PartnerLogController.log(LOAD_SUCCEEDED)
-                            continuation.resume(
+                            resumeOnce(
                                 Result.success(
                                     PartnerAd(
                                         ad = ad,
@@ -517,7 +534,7 @@ class AppLovinAdapter : PartnerAdapter {
 
                         override fun failedToReceiveAd(errorCode: Int) {
                             PartnerLogController.log(LOAD_FAILED, "$errorCode")
-                            continuation.resume(
+                            resumeOnce(
                                 Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
                             )
                         }
@@ -525,7 +542,7 @@ class AppLovinAdapter : PartnerAdapter {
                 )
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
-                continuation.resume(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
+                resumeOnce(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
             }
         }
     }
@@ -542,7 +559,13 @@ class AppLovinAdapter : PartnerAdapter {
         request: PartnerAdLoadRequest,
         partnerAdListener: PartnerAdListener
     ): Result<PartnerAd> {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
+            fun resumeOnce(result: Result<PartnerAd>) {
+                if (continuation.isActive) {
+                    continuation.resume(result)
+                }
+            }
+
             appLovinSdk?.let {
 
                 // Save listener for later usage.
@@ -554,7 +577,7 @@ class AppLovinAdapter : PartnerAdapter {
                 rewardedAd.preload(object : AppLovinAdLoadListener {
                     override fun adReceived(ad: AppLovinAd?) {
                         PartnerLogController.log(LOAD_SUCCEEDED)
-                        continuation.resume(
+                        resumeOnce(
                             Result.success(
                                 PartnerAd(
                                     ad = ad,
@@ -567,14 +590,14 @@ class AppLovinAdapter : PartnerAdapter {
 
                     override fun failedToReceiveAd(errorCode: Int) {
                         PartnerLogController.log(LOAD_FAILED, "$errorCode")
-                        continuation.resume(
+                        resumeOnce(
                             Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
                         )
                     }
                 })
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
-                continuation.resume(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
+                resumeOnce(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
             }
         }
     }
@@ -594,15 +617,18 @@ class AppLovinAdapter : PartnerAdapter {
         partnerAdListener: PartnerAdListener?
     ): Result<PartnerAd> {
         return (partnerAd.ad as? AppLovinAd)?.let {
-            suspendCoroutine { continuation ->
+            suspendCancellableCoroutine { continuation ->
                 val interstitialAd =
                     AppLovinInterstitialAd.create(appLovinSdk, context)
 
                 interstitialAd.setAdDisplayListener(object :
                     AppLovinAdDisplayListener {
+
                     override fun adDisplayed(ad: AppLovinAd?) {
                         PartnerLogController.log(SHOW_SUCCEEDED)
-                        continuation.resume(Result.success(partnerAd))
+                        if (continuation.isActive) {
+                            continuation.resume(Result.success(partnerAd))
+                        }
                     }
 
                     override fun adHidden(ad: AppLovinAd?) {
@@ -645,7 +671,7 @@ class AppLovinAdapter : PartnerAdapter {
         partnerAd: PartnerAd,
         partnerAdListener: PartnerAdListener?
     ): Result<PartnerAd> {
-        return suspendCoroutine { continuation ->
+        return suspendCancellableCoroutine { continuation ->
             val rewardedAd = AppLovinIncentivizedInterstitial.create(appLovinSdk)
 
             var isUserVerified: Boolean? = null
@@ -721,7 +747,9 @@ class AppLovinAdapter : PartnerAdapter {
             val displayListener: AppLovinAdDisplayListener = object : AppLovinAdDisplayListener {
                 override fun adDisplayed(appLovinAd: AppLovinAd) {
                     PartnerLogController.log(SHOW_SUCCEEDED)
-                    continuation.resume(Result.success(partnerAd))
+                    if (continuation.isActive) {
+                        continuation.resume(Result.success(partnerAd))
+                    }
                     // TODO: HB-4119: We may need to check if the impression is recorded here.
                 }
 
