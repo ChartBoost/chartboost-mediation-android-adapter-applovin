@@ -323,10 +323,10 @@ class AppLovinAdapter : PartnerAdapter {
     ): Result<PartnerAd> {
         PartnerLogController.log(LOAD_STARTED)
 
-        return when (request.format) {
-            AdFormat.INTERSTITIAL -> loadInterstitialAd(request, partnerAdListener)
-            AdFormat.REWARDED -> loadRewardedAd(request, partnerAdListener)
-            AdFormat.BANNER, AdFormat.ADAPTIVE_BANNER -> loadBannerAd(
+        return when (request.format.key) {
+            AdFormat.INTERSTITIAL.key.key -> loadInterstitialAd(request, partnerAdListener)
+            AdFormat.REWARDED.key.key -> loadRewardedAd(request, partnerAdListener)
+            AdFormat.BANNER.key.key, "adaptive_banner" -> loadBannerAd(
                 context,
                 request,
                 partnerAdListener
@@ -350,14 +350,14 @@ class AppLovinAdapter : PartnerAdapter {
         PartnerLogController.log(SHOW_STARTED)
         val partnerAdListener = listeners.remove(partnerAd.request.identifier)
 
-        return when (partnerAd.request.format) {
+        return when (partnerAd.request.format.key) {
             // Banner ads don't have their own show.
-            AdFormat.BANNER, AdFormat.ADAPTIVE_BANNER -> {
+            AdFormat.BANNER.key, "adaptive_banner" -> {
                 PartnerLogController.log(SHOW_SUCCEEDED)
                 Result.success(partnerAd)
             }
-            AdFormat.INTERSTITIAL -> showInterstitialAd(context, partnerAd, partnerAdListener)
-            AdFormat.REWARDED -> showRewardedAd(context, partnerAd, partnerAdListener)
+            AdFormat.INTERSTITIAL.key -> showInterstitialAd(context, partnerAd, partnerAdListener)
+            AdFormat.REWARDED.key -> showRewardedAd(context, partnerAd, partnerAdListener)
             else -> {
                 PartnerLogController.log(SHOW_FAILED)
                 Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_UNSUPPORTED_AD_FORMAT))
@@ -377,8 +377,8 @@ class AppLovinAdapter : PartnerAdapter {
         listeners.remove(partnerAd.request.identifier)
 
         // Only invalidate banners as there are no explicit methods to invalidate the other formats.
-        return when (partnerAd.request.format) {
-            AdFormat.BANNER, AdFormat.ADAPTIVE_BANNER -> destroyBannerAd(partnerAd)
+        return when (partnerAd.request.format.key) {
+            AdFormat.BANNER.key, "adaptive_banner" -> destroyBannerAd(partnerAd)
             else -> {
                 PartnerLogController.log(INVALIDATE_SUCCEEDED)
                 Result.success(partnerAd)
