@@ -326,7 +326,7 @@ class AppLovinAdapter : PartnerAdapter {
         return when (request.format) {
             AdFormat.INTERSTITIAL -> loadInterstitialAd(request, partnerAdListener)
             AdFormat.REWARDED -> loadRewardedAd(request, partnerAdListener)
-            AdFormat.BANNER -> loadBannerAd(
+            AdFormat.BANNER, AdFormat.ADAPTIVE_BANNER -> loadBannerAd(
                 context,
                 request,
                 partnerAdListener
@@ -352,7 +352,7 @@ class AppLovinAdapter : PartnerAdapter {
 
         return when (partnerAd.request.format) {
             // Banner ads don't have their own show.
-            AdFormat.BANNER -> {
+            AdFormat.BANNER, AdFormat.ADAPTIVE_BANNER -> {
                 PartnerLogController.log(SHOW_SUCCEEDED)
                 Result.success(partnerAd)
             }
@@ -378,7 +378,7 @@ class AppLovinAdapter : PartnerAdapter {
 
         // Only invalidate banners as there are no explicit methods to invalidate the other formats.
         return when (partnerAd.request.format) {
-            AdFormat.BANNER -> destroyBannerAd(partnerAd)
+            AdFormat.BANNER, AdFormat.ADAPTIVE_BANNER -> destroyBannerAd(partnerAd)
             else -> {
                 PartnerLogController.log(INVALIDATE_SUCCEEDED)
                 Result.success(partnerAd)
