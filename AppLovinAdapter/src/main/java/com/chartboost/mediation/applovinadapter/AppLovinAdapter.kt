@@ -324,9 +324,9 @@ class AppLovinAdapter : PartnerAdapter {
         PartnerLogController.log(LOAD_STARTED)
 
         return when (request.format.key) {
-            AdFormat.INTERSTITIAL.key.key -> loadInterstitialAd(request, partnerAdListener)
-            AdFormat.REWARDED.key.key -> loadRewardedAd(request, partnerAdListener)
-            AdFormat.BANNER.key.key, "adaptive_banner" -> loadBannerAd(
+            AdFormat.INTERSTITIAL.key -> loadInterstitialAd(request, partnerAdListener)
+            AdFormat.REWARDED.key -> loadRewardedAd(request, partnerAdListener)
+            AdFormat.BANNER.key, "adaptive_banner" -> loadBannerAd(
                 context,
                 request,
                 partnerAdListener
