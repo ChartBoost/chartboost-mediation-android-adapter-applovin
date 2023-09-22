@@ -34,6 +34,11 @@ import kotlin.coroutines.resume
 class AppLovinAdapter : PartnerAdapter {
     companion object {
         /**
+         * The AppLovin SDK needs an instance that is later passed to its ad lifecycle methods.
+         */
+        private var appLovinSdk: AppLovinSdk? = null
+
+        /**
          * Enable/disable AppLovin's test mode. Remember to set this to false in production.
          *
          * @param context The current [Context].
@@ -52,29 +57,51 @@ class AppLovinAdapter : PartnerAdapter {
 
                     adInfo?.let { adId ->
                         withContext(Main) {
-                            AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
-                                listOf(adId)
+                            appLovinSdk?.let { sdk ->
+                                sdk.settings?.testDeviceAdvertisingIds = listOf(adId)
+
+                                PartnerLogController.log(
+                                    CUSTOM,
+                                    "AppLovin test mode is enabled. Remember to disable it before publishing."
+                                )
+                            } ?: run {
+                                PartnerLogController.log(
+                                    CUSTOM,
+                                    "Unable to set test mode. AppLovin SDK instance is null."
+                                )
+                            }
                         }
                     } ?: run {
-                        PartnerLogController.log(
-                            CUSTOM,
-                            "AppLovin test mode is disabled. No advertising id found."
-                        )
-                        AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
-                            emptyList()
+                        appLovinSdk?.let { sdk ->
+                            sdk.settings?.testDeviceAdvertisingIds = emptyList()
+
+                            PartnerLogController.log(
+                                CUSTOM,
+                                "AppLovin test mode is disabled. No advertising id found."
+                            )
+                        } ?: run {
+                            PartnerLogController.log(
+                                CUSTOM,
+                                "Unable to set test mode. AppLovin SDK instance is null."
+                            )
+                        }
                     }
                 }
             } else {
-                AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds = emptyList()
-            }
+                appLovinSdk?.let { sdk ->
+                    sdk.settings?.testDeviceAdvertisingIds = emptyList()
 
-            PartnerLogController.log(
-                CUSTOM,
-                "AppLovin test mode is ${
-                    if (enabled) "enabled. Remember to disable it before publishing."
-                    else "disabled."
-                }"
-            )
+                    PartnerLogController.log(
+                        CUSTOM,
+                        "AppLovin test mode is disabled."
+                    )
+                } ?: run {
+                    PartnerLogController.log(
+                        CUSTOM,
+                        "Unable to set test mode. AppLovin SDK instance is null."
+                    )
+                }
+            }
         }
 
         /**
@@ -84,10 +111,16 @@ class AppLovinAdapter : PartnerAdapter {
          * @param muted True to mute, false otherwise.
          */
         public fun setMuted(context: Context, muted: Boolean) {
-            AppLovinSdk.getInstance(context).settings.isMuted = muted
-            PartnerLogController.log(
+            appLovinSdk?.let { sdk ->
+                sdk.settings.isMuted = muted
+
+                PartnerLogController.log(
+                    CUSTOM,
+                    "AppLovin video creatives will be ${if (muted) "muted" else "unmuted"}."
+                )
+            } ?: PartnerLogController.log(
                 CUSTOM,
-                "AppLovin video creatives will be ${if (muted) "muted" else "unmuted"}."
+                "Unable to set muted. AppLovin SDK instance is null."
             )
         }
 
@@ -98,33 +131,38 @@ class AppLovinAdapter : PartnerAdapter {
          * @param enabled True to enable verbose logging, false otherwise.
          */
         public fun setVerboseLogging(context: Context, enabled: Boolean) {
-            AppLovinSdk.getInstance(context).settings.setVerboseLogging(enabled)
-            PartnerLogController.log(
+            appLovinSdk?.let { sdk ->
+                sdk.settings.setVerboseLogging(enabled)
+
+                PartnerLogController.log(
+                    CUSTOM,
+                    "AppLovin verbose logging is ${if (enabled) "enabled" else "disabled"}."
+                )
+            } ?: PartnerLogController.log(
                 CUSTOM,
-                "AppLovin verbose logging is ${if (enabled) "enabled" else "disabled"}."
+                "Unable to set verbose logging. AppLovin SDK instance is null."
             )
         }
 
         /**
          * Enable/disable AppLovin's location sharing.
          *
-         * @param context The current [Context].
          * @param enabled True to enable location sharing, false otherwise.
          */
-        public fun setLocationSharing(context: Context, enabled: Boolean) {
-            AppLovinSdk.getInstance(context).settings.isLocationCollectionEnabled = enabled
+        fun setLocationSharing(enabled: Boolean) {
+            appLovinSdk?.let { sdk ->
+                sdk.settings.isLocationCollectionEnabled = enabled
 
-            PartnerLogController.log(
+                PartnerLogController.log(
+                    CUSTOM,
+                    "AppLovin location sharing is ${if (enabled) "enabled" else "disabled"}."
+                )
+            } ?: PartnerLogController.log(
                 CUSTOM,
-                "AppLovin location sharing is ${if (enabled) "enabled" else "disabled"}."
+                "Unable to set location sharing. AppLovin SDK instance is null."
             )
         }
     }
-
-    /**
-     * The AppLovin SDK needs an instance that is later passed to its ad lifecycle methods.
-     */
-    private var appLovinSdk: AppLovinSdk? = null
 
     /**
      * The AppLovin SDK needs a context for its privacy methods.
