@@ -34,11 +34,6 @@ import kotlin.coroutines.resume
 class AppLovinAdapter : PartnerAdapter {
     companion object {
         /**
-         * The AppLovin SDK needs an instance that is later passed to its ad lifecycle methods.
-         */
-        private var appLovinSdk: AppLovinSdk? = null
-
-        /**
          * Enable/disable AppLovin's test mode. Remember to set this to false in production.
          *
          * @param context The current [Context].
@@ -107,10 +102,9 @@ class AppLovinAdapter : PartnerAdapter {
         /**
          * Enable/disable AppLovin's mute setting.
          *
-         * @param context The current [Context].
          * @param muted True to mute, false otherwise.
          */
-        public fun setMuted(context: Context, muted: Boolean) {
+        public fun setMuted(muted: Boolean) {
             appLovinSdk?.let { sdk ->
                 sdk.settings.isMuted = muted
 
@@ -127,10 +121,9 @@ class AppLovinAdapter : PartnerAdapter {
         /**
          * Enable/disable AppLovin's verbose logging.
          *
-         * @param context The current [Context].
          * @param enabled True to enable verbose logging, false otherwise.
          */
-        public fun setVerboseLogging(context: Context, enabled: Boolean) {
+        public fun setVerboseLogging(enabled: Boolean) {
             appLovinSdk?.let { sdk ->
                 sdk.settings.setVerboseLogging(enabled)
 
@@ -162,6 +155,11 @@ class AppLovinAdapter : PartnerAdapter {
                 "Unable to set location sharing. AppLovin SDK instance is null."
             )
         }
+
+        /**
+         * The AppLovin SDK needs an instance that is later passed to its ad lifecycle methods.
+         */
+        private var appLovinSdk: AppLovinSdk? = null
     }
 
     /**
