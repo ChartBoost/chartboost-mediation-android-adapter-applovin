@@ -17,10 +17,7 @@ import com.chartboost.heliumsdk.domain.*
 import com.chartboost.heliumsdk.utils.PartnerLogController
 import com.chartboost.heliumsdk.utils.PartnerLogController.PartnerAdapterEvents.*
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -34,97 +31,80 @@ import kotlin.coroutines.resume
 class AppLovinAdapter : PartnerAdapter {
     companion object {
         /**
+         * The AppLovin SDK instance. Note: instances are SDK Key specific. This is set in [setUp].
+         * Do NOT create other instances from your app.
+         */
+        private var appLovinSdk: AppLovinSdk? = null
+
+        /**
          * Enable/disable AppLovin's test mode. Remember to set this to false in production.
          *
          * @param context The current [Context].
          * @param enabled True to enable test mode, false otherwise.
          */
-        public fun setTestMode(context: Context, enabled: Boolean) {
-            if (enabled) {
-                CoroutineScope(IO).launch {
-                    val adInfo = try {
-                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
-                    } catch (e: Exception) {
-                        context.contentResolver.let { resolver ->
-                            Settings.Secure.getString(resolver, "advertising_id")
-                        }
+        suspend fun setTestMode(context: Context, enabled: Boolean) {
+            val adIds = withContext(IO) {
+                try {
+                    AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                } catch (e: Exception) {
+                    context.contentResolver.let { resolver ->
+                        Settings.Secure.getString(resolver, "advertising_id")
                     }
-
-                    adInfo?.let { adId ->
-                        withContext(Main) {
-                            AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
-                                listOf(adId)
-                        }
-                    } ?: run {
-                        PartnerLogController.log(
-                            CUSTOM,
-                            "AppLovin test mode is disabled. No advertising id found."
-                        )
-                        AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds =
-                            emptyList()
-                    }
-                }
-            } else {
-                AppLovinSdk.getInstance(context).settings.testDeviceAdvertisingIds = emptyList()
+                }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
             }
 
-            PartnerLogController.log(
-                CUSTOM,
-                "AppLovin test mode is ${
-                    if (enabled) "enabled. Remember to disable it before publishing."
-                    else "disabled."
-                }"
-            )
+            updateSdkSetting("test mode", enabled) {
+                settings.testDeviceAdvertisingIds = adIds
+            }
         }
 
         /**
          * Enable/disable AppLovin's mute setting.
          *
-         * @param context The current [Context].
-         * @param muted True to mute, false otherwise.
+         * @param muted True to mute video creatives, false otherwise.
          */
-        public fun setMuted(context: Context, muted: Boolean) {
-            AppLovinSdk.getInstance(context).settings.isMuted = muted
-            PartnerLogController.log(
-                CUSTOM,
-                "AppLovin video creatives will be ${if (muted) "muted" else "unmuted"}."
-            )
+        fun setMuted(muted: Boolean) {
+            updateSdkSetting("mute setting", muted) {
+                settings.isMuted = muted
+            }
         }
 
         /**
          * Enable/disable AppLovin's verbose logging.
          *
-         * @param context The current [Context].
          * @param enabled True to enable verbose logging, false otherwise.
          */
-        public fun setVerboseLogging(context: Context, enabled: Boolean) {
-            AppLovinSdk.getInstance(context).settings.setVerboseLogging(enabled)
-            PartnerLogController.log(
-                CUSTOM,
-                "AppLovin verbose logging is ${if (enabled) "enabled" else "disabled"}."
-            )
+        fun setVerboseLogging(enabled: Boolean) {
+            updateSdkSetting("verbose logging", enabled) {
+                settings.setVerboseLogging(enabled)
+            }
         }
 
         /**
          * Enable/disable AppLovin's location sharing.
-         *
-         * @param context The current [Context].
-         * @param enabled True to enable location sharing, false otherwise.
          */
-        public fun setLocationSharing(context: Context, enabled: Boolean) {
-            AppLovinSdk.getInstance(context).settings.isLocationCollectionEnabled = enabled
+        fun setLocationSharing(enabled: Boolean) {
+            updateSdkSetting("location sharing", enabled) {
+                settings.isLocationCollectionEnabled = enabled
+            }
+        }
 
-            PartnerLogController.log(
-                CUSTOM,
-                "AppLovin location sharing is ${if (enabled) "enabled" else "disabled"}."
-            )
+        /**
+         * Generic function to update AppLovin SDK settings and log the action.
+         *
+         * @param settingName The name of the setting being modified.
+         * @param enabled Whether the setting is enabled or not.
+         * @param action The action to perform on the AppLovin SDK.
+         */
+        private fun updateSdkSetting(settingName: String, enabled: Boolean, action: AppLovinSdk.() -> Unit) {
+            appLovinSdk?.let { sdk ->
+                sdk.action()
+
+                val status = if (enabled) "enabled" else "disabled"
+                PartnerLogController.log(CUSTOM, "AppLovin $settingName is $status.")
+            } ?: PartnerLogController.log(CUSTOM, "Unable to set $settingName. AppLovin SDK instance is null.")
         }
     }
-
-    /**
-     * The AppLovin SDK needs an instance that is later passed to its ad lifecycle methods.
-     */
-    private var appLovinSdk: AppLovinSdk? = null
 
     /**
      * The AppLovin SDK needs a context for its privacy methods.
