@@ -53,7 +53,7 @@ class AppLovinAdapter : PartnerAdapter {
                     adInfo?.let { adId ->
                         withContext(Main) {
                             appLovinSdk?.let { sdk ->
-                                sdk.settings?.testDeviceAdvertisingIds = listOf(adId)
+                                sdk.settings.testDeviceAdvertisingIds = listOf(adId)
 
                                 PartnerLogController.log(
                                     CUSTOM,
@@ -68,7 +68,7 @@ class AppLovinAdapter : PartnerAdapter {
                         }
                     } ?: run {
                         appLovinSdk?.let { sdk ->
-                            sdk.settings?.testDeviceAdvertisingIds = emptyList()
+                            sdk.settings.testDeviceAdvertisingIds = emptyList()
 
                             PartnerLogController.log(
                                 CUSTOM,
@@ -84,7 +84,7 @@ class AppLovinAdapter : PartnerAdapter {
                 }
             } else {
                 appLovinSdk?.let { sdk ->
-                    sdk.settings?.testDeviceAdvertisingIds = emptyList()
+                    sdk.settings.testDeviceAdvertisingIds = emptyList()
 
                     PartnerLogController.log(
                         CUSTOM,
