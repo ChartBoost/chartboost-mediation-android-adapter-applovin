@@ -1,6 +1,6 @@
 /*
  * Copyright 2022-2023 Chartboost, Inc.
- * 
+ *
  * Use of this source code is governed by an MIT-style
  * license that can be found in the LICENSE file.
  */
@@ -42,16 +42,20 @@ class AppLovinAdapter : PartnerAdapter {
          * @param context The current [Context].
          * @param enabled True to enable test mode, false otherwise.
          */
-        suspend fun setTestMode(context: Context, enabled: Boolean) {
-            val adIds = withContext(IO) {
-                try {
-                    AdvertisingIdClient.getAdvertisingIdInfo(context).id
-                } catch (e: Exception) {
-                    context.contentResolver.let { resolver ->
-                        Settings.Secure.getString(resolver, "advertising_id")
-                    }
-                }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
-            }
+        suspend fun setTestMode(
+            context: Context,
+            enabled: Boolean,
+        ) {
+            val adIds =
+                withContext(IO) {
+                    try {
+                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                    } catch (e: Exception) {
+                        context.contentResolver.let { resolver ->
+                            Settings.Secure.getString(resolver, "advertising_id")
+                        }
+                    }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
+                }
 
             updateSdkSetting("test mode", enabled) {
                 settings.testDeviceAdvertisingIds = adIds
@@ -96,7 +100,11 @@ class AppLovinAdapter : PartnerAdapter {
          * @param enabled Whether the setting is enabled or not.
          * @param action The action to perform on the AppLovin SDK.
          */
-        private fun updateSdkSetting(settingName: String, enabled: Boolean, action: AppLovinSdk.() -> Unit) {
+        private fun updateSdkSetting(
+            settingName: String,
+            enabled: Boolean,
+            action: AppLovinSdk.() -> Unit,
+        ) {
             appLovinSdk?.let { sdk ->
                 sdk.action()
 
@@ -159,7 +167,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override suspend fun setUp(
         context: Context,
-        partnerConfiguration: PartnerConfiguration
+        partnerConfiguration: PartnerConfiguration,
     ): Result<Unit> {
         PartnerLogController.log(SETUP_STARTED)
 
@@ -171,7 +179,7 @@ class AppLovinAdapter : PartnerAdapter {
             }
 
             Json.decodeFromJsonElement<String>(
-                (partnerConfiguration.credentials as JsonObject).getValue("sdk_key")
+                (partnerConfiguration.credentials as JsonObject).getValue("sdk_key"),
             ).trim()
                 .takeIf { it.isNotEmpty() }
                 ?.let { sdkKey ->
@@ -179,23 +187,26 @@ class AppLovinAdapter : PartnerAdapter {
                         // Save the application context for later usage.
                         appContext = it
 
-                        appLovinSdk = AppLovinSdk.getInstance(
-                            sdkKey,
-                            AppLovinSdkSettings(it),
-                            it
-                        ).also { sdk ->
-                            sdk.initializeSdk {
-                                sdk.mediationProvider = "Chartboost"
-                                sdk.setPluginVersion(adapterVersion)
-                                resumeOnce(
-                                    Result.success(PartnerLogController.log(SETUP_SUCCEEDED))
-                                )
+                        appLovinSdk =
+                            AppLovinSdk.getInstance(
+                                sdkKey,
+                                AppLovinSdkSettings(it),
+                                it,
+                            ).also { sdk ->
+                                sdk.initializeSdk {
+                                    sdk.mediationProvider = "Chartboost"
+                                    sdk.setPluginVersion(adapterVersion)
+                                    resumeOnce(
+                                        Result.success(PartnerLogController.log(SETUP_SUCCEEDED)),
+                                    )
+                                }
                             }
-                        }
                     }
                 } ?: run {
                 PartnerLogController.log(SETUP_FAILED, "No SDK key found.")
-                resumeOnce(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)))
+                resumeOnce(
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)),
+                )
             }
         }
     }
@@ -210,14 +221,14 @@ class AppLovinAdapter : PartnerAdapter {
     override fun setGdpr(
         context: Context,
         applies: Boolean?,
-        gdprConsentStatus: GdprConsentStatus
+        gdprConsentStatus: GdprConsentStatus,
     ) {
         PartnerLogController.log(
             when (applies) {
                 true -> GDPR_APPLICABLE
                 false -> GDPR_NOT_APPLICABLE
                 else -> GDPR_UNKNOWN
-            }
+            },
         )
 
         PartnerLogController.log(
@@ -225,7 +236,7 @@ class AppLovinAdapter : PartnerAdapter {
                 GdprConsentStatus.GDPR_CONSENT_UNKNOWN -> GDPR_CONSENT_UNKNOWN
                 GdprConsentStatus.GDPR_CONSENT_GRANTED -> GDPR_CONSENT_GRANTED
                 GdprConsentStatus.GDPR_CONSENT_DENIED -> GDPR_CONSENT_DENIED
-            }
+            },
         )
 
         // Setting GDPR applicability is a NO-OP because AppLovin does not have a corresponding API.
@@ -244,13 +255,15 @@ class AppLovinAdapter : PartnerAdapter {
     override fun setCcpaConsent(
         context: Context,
         hasGrantedCcpaConsent: Boolean,
-        privacyString: String
+        privacyString: String,
     ) {
         PartnerLogController.log(
-            if (hasGrantedCcpaConsent) CCPA_CONSENT_GRANTED
-            else CCPA_CONSENT_DENIED
+            if (hasGrantedCcpaConsent) {
+                CCPA_CONSENT_GRANTED
+            } else {
+                CCPA_CONSENT_DENIED
+            },
         )
-
 
         AppLovinPrivacySettings.setDoNotSell(!hasGrantedCcpaConsent, context)
     }
@@ -261,10 +274,16 @@ class AppLovinAdapter : PartnerAdapter {
      * @param context The current [Context].
      * @param isSubjectToCoppa True if the user is subject to COPPA, false otherwise.
      */
-    override fun setUserSubjectToCoppa(context: Context, isSubjectToCoppa: Boolean) {
+    override fun setUserSubjectToCoppa(
+        context: Context,
+        isSubjectToCoppa: Boolean,
+    ) {
         PartnerLogController.log(
-            if (isSubjectToCoppa) COPPA_SUBJECT
-            else COPPA_NOT_SUBJECT
+            if (isSubjectToCoppa) {
+                COPPA_SUBJECT
+            } else {
+                COPPA_NOT_SUBJECT
+            },
         )
 
         AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, context)
@@ -280,7 +299,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     override suspend fun fetchBidderInformation(
         context: Context,
-        request: PreBidRequest
+        request: PreBidRequest,
     ): Map<String, String> {
         PartnerLogController.log(BIDDER_INFO_FETCH_STARTED)
         PartnerLogController.log(BIDDER_INFO_FETCH_SUCCEEDED)
@@ -299,18 +318,19 @@ class AppLovinAdapter : PartnerAdapter {
     override suspend fun load(
         context: Context,
         request: PartnerAdLoadRequest,
-        partnerAdListener: PartnerAdListener
+        partnerAdListener: PartnerAdListener,
     ): Result<PartnerAd> {
         PartnerLogController.log(LOAD_STARTED)
 
         return when (request.format.key) {
             AdFormat.INTERSTITIAL.key -> loadInterstitialAd(request, partnerAdListener)
             AdFormat.REWARDED.key -> loadRewardedAd(request, partnerAdListener)
-            AdFormat.BANNER.key, "adaptive_banner" -> loadBannerAd(
-                context,
-                request,
-                partnerAdListener
-            )
+            AdFormat.BANNER.key, "adaptive_banner" ->
+                loadBannerAd(
+                    context,
+                    request,
+                    partnerAdListener,
+                )
             else -> {
                 PartnerLogController.log(LOAD_FAILED)
                 Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_UNSUPPORTED_AD_FORMAT))
@@ -326,7 +346,10 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return Result.success(PartnerAd) if the ad was successfully shown, Result.failure(Exception) otherwise.
      */
-    override suspend fun show(context: Context, partnerAd: PartnerAd): Result<PartnerAd> {
+    override suspend fun show(
+        context: Context,
+        partnerAd: PartnerAd,
+    ): Result<PartnerAd> {
         PartnerLogController.log(SHOW_STARTED)
         val partnerAdListener = listeners.remove(partnerAd.request.identifier)
 
@@ -378,7 +401,7 @@ class AppLovinAdapter : PartnerAdapter {
     private suspend fun loadBannerAd(
         context: Context,
         request: PartnerAdLoadRequest,
-        partnerAdListener: PartnerAdListener
+        partnerAdListener: PartnerAdListener,
     ): Result<PartnerAd> {
         return suspendCancellableCoroutine { continuation ->
             fun resumeOnce(result: Result<PartnerAd>) {
@@ -389,7 +412,7 @@ class AppLovinAdapter : PartnerAdapter {
             if (appLovinSdk == null) {
                 PartnerLogController.log(LOAD_FAILED)
                 resumeOnce(
-                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_NOT_INITIALIZED))
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_NOT_INITIALIZED)),
                 )
                 return@suspendCancellableCoroutine
             }
@@ -398,44 +421,60 @@ class AppLovinAdapter : PartnerAdapter {
                 appLovinSdk,
                 getAppLovinAdSize(request.size),
                 request.partnerPlacement,
-                context
+                context,
             ).apply {
                 // Apply the Ad Load Listener to the AppLovinAdView
-                setAdLoadListener(object : AppLovinAdLoadListener {
-                    override fun adReceived(ad: AppLovinAd) {
-                        PartnerLogController.log(LOAD_SUCCEEDED)
-                        resumeOnce(
-                            Result.success(
-                                PartnerAd(
-                                    ad = this@apply,
-                                    details = emptyMap(),
-                                    request = request
-                                )
+                setAdLoadListener(
+                    object : AppLovinAdLoadListener {
+                        override fun adReceived(ad: AppLovinAd) {
+                            PartnerLogController.log(LOAD_SUCCEEDED)
+                            resumeOnce(
+                                Result.success(
+                                    PartnerAd(
+                                        ad = this@apply,
+                                        details = emptyMap(),
+                                        request = request,
+                                    ),
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    override fun failedToReceiveAd(errorCode: Int) {
-                        PartnerLogController.log(LOAD_FAILED, "$errorCode")
-                        resumeOnce(
-                            Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
-                        )
-                    }
-                })
+                        override fun failedToReceiveAd(errorCode: Int) {
+                            PartnerLogController.log(LOAD_FAILED, "$errorCode")
+                            resumeOnce(
+                                Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode))),
+                            )
+                        }
+                    },
+                )
 
                 // Apply the AdView Event Listener to the AppLovinAdView
-                setAdViewEventListener(object : AppLovinAdViewEventListener {
-                    override fun adOpenedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
-                    override fun adClosedFullscreen(ad: AppLovinAd, adView: AppLovinAdView) {}
-                    override fun adLeftApplication(ad: AppLovinAd, adView: AppLovinAdView) {}
-                    override fun adFailedToDisplay(
-                        ad: AppLovinAd,
-                        adView: AppLovinAdView,
-                        errorCode: AppLovinAdViewDisplayErrorCode
-                    ) {
-                        PartnerLogController.log(SHOW_FAILED, "$errorCode")
-                    }
-                })
+                setAdViewEventListener(
+                    object : AppLovinAdViewEventListener {
+                        override fun adOpenedFullscreen(
+                            ad: AppLovinAd,
+                            adView: AppLovinAdView,
+                        ) {}
+
+                        override fun adClosedFullscreen(
+                            ad: AppLovinAd,
+                            adView: AppLovinAdView,
+                        ) {}
+
+                        override fun adLeftApplication(
+                            ad: AppLovinAd,
+                            adView: AppLovinAdView,
+                        ) {}
+
+                        override fun adFailedToDisplay(
+                            ad: AppLovinAd,
+                            adView: AppLovinAdView,
+                            errorCode: AppLovinAdViewDisplayErrorCode,
+                        ) {
+                            PartnerLogController.log(SHOW_FAILED, "$errorCode")
+                        }
+                    },
+                )
 
                 // Apply the Ad Click Listener to the AppLovinAdView
                 setAdClickListener { ad ->
@@ -444,8 +483,8 @@ class AppLovinAdapter : PartnerAdapter {
                         PartnerAd(
                             ad = ad,
                             details = emptyMap(),
-                            request = request
-                        )
+                            request = request,
+                        ),
                     )
                 }
 
@@ -483,7 +522,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     private suspend fun loadInterstitialAd(
         request: PartnerAdLoadRequest,
-        partnerAdListener: PartnerAdListener
+        partnerAdListener: PartnerAdListener,
     ): Result<PartnerAd> {
         return suspendCancellableCoroutine { continuation ->
             fun resumeOnce(result: Result<PartnerAd>) {
@@ -506,23 +545,25 @@ class AppLovinAdapter : PartnerAdapter {
                                     PartnerAd(
                                         ad = ad,
                                         details = emptyMap(),
-                                        request = request
-                                    )
-                                )
+                                        request = request,
+                                    ),
+                                ),
                             )
                         }
 
                         override fun failedToReceiveAd(errorCode: Int) {
                             PartnerLogController.log(LOAD_FAILED, "$errorCode")
                             resumeOnce(
-                                Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
+                                Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode))),
                             )
                         }
-                    }
+                    },
                 )
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
-                resumeOnce(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
+                resumeOnce(
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)),
+                )
             }
         }
     }
@@ -537,7 +578,7 @@ class AppLovinAdapter : PartnerAdapter {
      */
     private suspend fun loadRewardedAd(
         request: PartnerAdLoadRequest,
-        partnerAdListener: PartnerAdListener
+        partnerAdListener: PartnerAdListener,
     ): Result<PartnerAd> {
         return suspendCancellableCoroutine { continuation ->
             fun resumeOnce(result: Result<PartnerAd>) {
@@ -547,37 +588,40 @@ class AppLovinAdapter : PartnerAdapter {
             }
 
             appLovinSdk?.let {
-
                 // Save listener for later usage.
                 listeners[request.identifier] = partnerAdListener
 
                 val rewardedAd =
                     AppLovinIncentivizedInterstitial.create(request.partnerPlacement, it)
 
-                rewardedAd.preload(object : AppLovinAdLoadListener {
-                    override fun adReceived(ad: AppLovinAd?) {
-                        PartnerLogController.log(LOAD_SUCCEEDED)
-                        resumeOnce(
-                            Result.success(
-                                PartnerAd(
-                                    ad = ad,
-                                    details = emptyMap(),
-                                    request = request
-                                )
+                rewardedAd.preload(
+                    object : AppLovinAdLoadListener {
+                        override fun adReceived(ad: AppLovinAd?) {
+                            PartnerLogController.log(LOAD_SUCCEEDED)
+                            resumeOnce(
+                                Result.success(
+                                    PartnerAd(
+                                        ad = ad,
+                                        details = emptyMap(),
+                                        request = request,
+                                    ),
+                                ),
                             )
-                        )
-                    }
+                        }
 
-                    override fun failedToReceiveAd(errorCode: Int) {
-                        PartnerLogController.log(LOAD_FAILED, "$errorCode")
-                        resumeOnce(
-                            Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode)))
-                        )
-                    }
-                })
+                        override fun failedToReceiveAd(errorCode: Int) {
+                            PartnerLogController.log(LOAD_FAILED, "$errorCode")
+                            resumeOnce(
+                                Result.failure(ChartboostMediationAdException(getChartboostMediationError(errorCode))),
+                            )
+                        }
+                    },
+                )
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
-                resumeOnce(Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)))
+                resumeOnce(
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)),
+                )
             }
         }
     }
@@ -594,38 +638,39 @@ class AppLovinAdapter : PartnerAdapter {
     private suspend fun showInterstitialAd(
         context: Context,
         partnerAd: PartnerAd,
-        partnerAdListener: PartnerAdListener?
+        partnerAdListener: PartnerAdListener?,
     ): Result<PartnerAd> {
         return (partnerAd.ad as? AppLovinAd)?.let {
             suspendCancellableCoroutine { continuation ->
                 val interstitialAd =
                     AppLovinInterstitialAd.create(appLovinSdk, context)
 
-                interstitialAd.setAdDisplayListener(object :
-                    AppLovinAdDisplayListener {
-
-                    override fun adDisplayed(ad: AppLovinAd?) {
-                        PartnerLogController.log(SHOW_SUCCEEDED)
-                        if (continuation.isActive) {
-                            continuation.resume(Result.success(partnerAd))
+                interstitialAd.setAdDisplayListener(
+                    object :
+                        AppLovinAdDisplayListener {
+                        override fun adDisplayed(ad: AppLovinAd?) {
+                            PartnerLogController.log(SHOW_SUCCEEDED)
+                            if (continuation.isActive) {
+                                continuation.resume(Result.success(partnerAd))
+                            }
                         }
-                    }
 
-                    override fun adHidden(ad: AppLovinAd?) {
-                        PartnerLogController.log(DID_DISMISS)
-                        partnerAdListener?.onPartnerAdDismissed(partnerAd, null)
-                            ?: PartnerLogController.log(
-                                CUSTOM,
-                                "Unable to fire onPartnerAdDismissed for AppLovin adapter."
-                            )
-                    }
-                })
+                        override fun adHidden(ad: AppLovinAd?) {
+                            PartnerLogController.log(DID_DISMISS)
+                            partnerAdListener?.onPartnerAdDismissed(partnerAd, null)
+                                ?: PartnerLogController.log(
+                                    CUSTOM,
+                                    "Unable to fire onPartnerAdDismissed for AppLovin adapter.",
+                                )
+                        }
+                    },
+                )
 
                 interstitialAd.setAdClickListener {
                     PartnerLogController.log(DID_CLICK)
                     partnerAdListener?.onPartnerAdClicked(partnerAd) ?: PartnerLogController.log(
                         CUSTOM,
-                        "Unable to fire onPartnerAdClicked for AppLovin adapter."
+                        "Unable to fire onPartnerAdClicked for AppLovin adapter.",
                     )
                 }
 
@@ -649,42 +694,47 @@ class AppLovinAdapter : PartnerAdapter {
     private suspend fun showRewardedAd(
         context: Context,
         partnerAd: PartnerAd,
-        partnerAdListener: PartnerAdListener?
+        partnerAdListener: PartnerAdListener?,
     ): Result<PartnerAd> {
         return suspendCancellableCoroutine { continuation ->
             val rewardedAd = AppLovinIncentivizedInterstitial.create(appLovinSdk)
 
             var isUserVerified: Boolean? = null
 
-            val rewardListener: AppLovinAdRewardListener = object : AppLovinAdRewardListener {
-                override fun userRewardVerified(
-                    appLovinAd: AppLovinAd,
-                    map: Map<String, String>
-                ) {
-                    // user should be granted the reward upon completion
-                    isUserVerified = true
-                }
+            val rewardListener: AppLovinAdRewardListener =
+                object : AppLovinAdRewardListener {
+                    override fun userRewardVerified(
+                        appLovinAd: AppLovinAd,
+                        map: Map<String, String>,
+                    ) {
+                        // user should be granted the reward upon completion
+                        isUserVerified = true
+                    }
 
-                override fun userOverQuota(appLovinAd: AppLovinAd, map: Map<String, String>?) {}
-                override fun userRewardRejected(
-                    appLovinAd: AppLovinAd,
-                    map: Map<String, String>?
-                ) {
-                    // user has been denylisted and should not be granted a reward
-                    isUserVerified = false
-                }
+                    override fun userOverQuota(
+                        appLovinAd: AppLovinAd,
+                        map: Map<String, String>?,
+                    ) {}
 
-                override fun validationRequestFailed(
-                    appLovinAd: AppLovinAd,
-                    responseCode: Int
-                ) {
-                    // user could not be verified
-                    PartnerLogController.log(
-                        CUSTOM,
-                        "validationRequestFailed for $partnerAd. Error: $responseCode"
-                    )
+                    override fun userRewardRejected(
+                        appLovinAd: AppLovinAd,
+                        map: Map<String, String>?,
+                    ) {
+                        // user has been denylisted and should not be granted a reward
+                        isUserVerified = false
+                    }
+
+                    override fun validationRequestFailed(
+                        appLovinAd: AppLovinAd,
+                        responseCode: Int,
+                    ) {
+                        // user could not be verified
+                        PartnerLogController.log(
+                            CUSTOM,
+                            "validationRequestFailed for $partnerAd. Error: $responseCode",
+                        )
+                    }
                 }
-            }
 
             val playbackListener: AppLovinAdVideoPlaybackListener =
                 object : AppLovinAdVideoPlaybackListener {
@@ -694,21 +744,21 @@ class AppLovinAdapter : PartnerAdapter {
                     override fun videoPlaybackEnded(
                         appLovinAd: AppLovinAd,
                         percentViewed: Double,
-                        fullyWatched: Boolean
+                        fullyWatched: Boolean,
                     ) {
                         // Only stop the reward if the user was explicity deny listed by AppLovin
                         when {
                             isUserVerified == false -> {
                                 PartnerLogController.log(
                                     CUSTOM,
-                                    "Unable to reward due to user being denylisted by AppLovin."
+                                    "Unable to reward due to user being denylisted by AppLovin.",
                                 )
                             }
 
                             !fullyWatched -> {
                                 PartnerLogController.log(
                                     CUSTOM,
-                                    "Unable to reward due to video not being fully watched."
+                                    "Unable to reward due to video not being fully watched.",
                                 )
                             }
 
@@ -717,38 +767,39 @@ class AppLovinAdapter : PartnerAdapter {
                                 partnerAdListener?.onPartnerAdRewarded(partnerAd)
                                     ?: PartnerLogController.log(
                                         CUSTOM,
-                                        "Unable to fire onPartnerAdRewarded for AppLovin adapter."
+                                        "Unable to fire onPartnerAdRewarded for AppLovin adapter.",
                                     )
                             }
                         }
                     }
                 }
 
-            val displayListener: AppLovinAdDisplayListener = object : AppLovinAdDisplayListener {
-                override fun adDisplayed(appLovinAd: AppLovinAd) {
-                    PartnerLogController.log(SHOW_SUCCEEDED)
-                    if (continuation.isActive) {
-                        continuation.resume(Result.success(partnerAd))
+            val displayListener: AppLovinAdDisplayListener =
+                object : AppLovinAdDisplayListener {
+                    override fun adDisplayed(appLovinAd: AppLovinAd) {
+                        PartnerLogController.log(SHOW_SUCCEEDED)
+                        if (continuation.isActive) {
+                            continuation.resume(Result.success(partnerAd))
+                        }
+                        // TODO: HB-4119: We may need to check if the impression is recorded here.
                     }
-                    // TODO: HB-4119: We may need to check if the impression is recorded here.
-                }
 
-                override fun adHidden(appLovinAd: AppLovinAd) {
-                    PartnerLogController.log(DID_DISMISS)
-                    partnerAdListener?.onPartnerAdDismissed(partnerAd, null)
-                        ?: PartnerLogController.log(
-                            CUSTOM,
-                            "Unable to fire onPartnerAdDismissed for AppLovin adapter."
-                        )
+                    override fun adHidden(appLovinAd: AppLovinAd) {
+                        PartnerLogController.log(DID_DISMISS)
+                        partnerAdListener?.onPartnerAdDismissed(partnerAd, null)
+                            ?: PartnerLogController.log(
+                                CUSTOM,
+                                "Unable to fire onPartnerAdDismissed for AppLovin adapter.",
+                            )
+                    }
                 }
-            }
 
             val clickListener =
                 AppLovinAdClickListener {
                     PartnerLogController.log(DID_CLICK)
                     partnerAdListener?.onPartnerAdClicked(partnerAd) ?: PartnerLogController.log(
                         CUSTOM,
-                        "Unable to fire onPartnerAdClicked for AppLovin adapter."
+                        "Unable to fire onPartnerAdClicked for AppLovin adapter.",
                     )
                 }
 
@@ -758,7 +809,7 @@ class AppLovinAdapter : PartnerAdapter {
                 rewardListener,
                 playbackListener,
                 displayListener,
-                clickListener
+                clickListener,
             )
         } ?: run {
             PartnerLogController.log(SHOW_FAILED, "Ad is null.")
@@ -798,18 +849,19 @@ class AppLovinAdapter : PartnerAdapter {
      *
      * @return The corresponding [ChartboostMediationError].
      */
-    private fun getChartboostMediationError(error: Int) = when (error) {
-        AppLovinErrorCodes.NO_FILL -> ChartboostMediationError.CM_LOAD_FAILURE_NO_FILL
-        AppLovinErrorCodes.NO_NETWORK -> ChartboostMediationError.CM_NO_CONNECTIVITY
-        AppLovinErrorCodes.SDK_DISABLED -> ChartboostMediationError.CM_INITIALIZATION_SKIPPED
-        // AppLovin is currently not part of programmatic bidding with Chartboost Mediation. Only waterfall.
-        AppLovinErrorCodes.INVALID_AD_TOKEN -> ChartboostMediationError.CM_LOAD_FAILURE_AUCTION_NO_BID
-        AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> ChartboostMediationError.CM_SHOW_FAILURE_UNKNOWN
-        AppLovinErrorCodes.FETCH_AD_TIMEOUT -> ChartboostMediationError.CM_LOAD_FAILURE_TIMEOUT
-        AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> ChartboostMediationError.CM_LOAD_FAILURE_OUT_OF_STORAGE
-        AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_READY
-        AppLovinErrorCodes.INVALID_RESPONSE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_BID_RESPONSE
-        AppLovinErrorCodes.INVALID_ZONE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_PARTNER_PLACEMENT
-        else -> ChartboostMediationError.CM_PARTNER_ERROR
-    }
+    private fun getChartboostMediationError(error: Int) =
+        when (error) {
+            AppLovinErrorCodes.NO_FILL -> ChartboostMediationError.CM_LOAD_FAILURE_NO_FILL
+            AppLovinErrorCodes.NO_NETWORK -> ChartboostMediationError.CM_NO_CONNECTIVITY
+            AppLovinErrorCodes.SDK_DISABLED -> ChartboostMediationError.CM_INITIALIZATION_SKIPPED
+            // AppLovin is currently not part of programmatic bidding with Chartboost Mediation. Only waterfall.
+            AppLovinErrorCodes.INVALID_AD_TOKEN -> ChartboostMediationError.CM_LOAD_FAILURE_AUCTION_NO_BID
+            AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> ChartboostMediationError.CM_SHOW_FAILURE_UNKNOWN
+            AppLovinErrorCodes.FETCH_AD_TIMEOUT -> ChartboostMediationError.CM_LOAD_FAILURE_TIMEOUT
+            AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> ChartboostMediationError.CM_LOAD_FAILURE_OUT_OF_STORAGE
+            AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_READY
+            AppLovinErrorCodes.INVALID_RESPONSE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_BID_RESPONSE
+            AppLovinErrorCodes.INVALID_ZONE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_PARTNER_PLACEMENT
+            else -> ChartboostMediationError.CM_PARTNER_ERROR
+        }
 }
