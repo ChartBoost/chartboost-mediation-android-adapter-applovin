@@ -695,8 +695,8 @@ class AppLovinAdapter : PartnerAdapter {
         context: Context,
         partnerAd: PartnerAd,
         partnerAdListener: PartnerAdListener?,
-    ): Result<PartnerAd> {
-        return suspendCancellableCoroutine { continuation ->
+    ): Result<PartnerAd> = withContext(IO) {
+        return@withContext suspendCancellableCoroutine { continuation ->
             val rewardedAd = AppLovinIncentivizedInterstitial.create(appLovinSdk)
 
             var isUserVerified: Boolean? = null
