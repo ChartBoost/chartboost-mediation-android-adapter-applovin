@@ -7,6 +7,7 @@
 
 package com.chartboost.mediation.applovinadapter
 
+import android.app.Activity
 import android.content.Context
 import android.provider.Settings
 import android.util.Size
@@ -343,13 +344,13 @@ class AppLovinAdapter : PartnerAdapter {
     /**
      * Attempt to show the currently loaded AppLovin ad.
      *
-     * @param context The current [Context]
+     * @param activity The current [Activity]
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
      *
      * @return Result.success(PartnerAd) if the ad was successfully shown, Result.failure(Exception) otherwise.
      */
     override suspend fun show(
-        context: Context,
+        activity: Activity,
         partnerAd: PartnerAd,
     ): Result<PartnerAd> {
         PartnerLogController.log(SHOW_STARTED)
@@ -361,8 +362,8 @@ class AppLovinAdapter : PartnerAdapter {
                 PartnerLogController.log(SHOW_SUCCEEDED)
                 Result.success(partnerAd)
             }
-            AdFormat.INTERSTITIAL.key -> showInterstitialAd(context, partnerAd, partnerAdListener)
-            AdFormat.REWARDED.key -> showRewardedAd(context, partnerAd, partnerAdListener)
+            AdFormat.INTERSTITIAL.key -> showInterstitialAd(activity, partnerAd, partnerAdListener)
+            AdFormat.REWARDED.key -> showRewardedAd(activity, partnerAd, partnerAdListener)
             else -> {
                 PartnerLogController.log(SHOW_FAILED)
                 Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_UNSUPPORTED_AD_FORMAT))
@@ -631,21 +632,21 @@ class AppLovinAdapter : PartnerAdapter {
     /**
      * Attempt to show an AppLovin interstitial ad.
      *
-     * @param context The current [Context].
+     * @param activity The current [Activity].
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
      * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully shown, Result.failure(Exception) otherwise.
      */
     private suspend fun showInterstitialAd(
-        context: Context,
+        activity: Activity,
         partnerAd: PartnerAd,
         partnerAdListener: PartnerAdListener?,
     ): Result<PartnerAd> {
         return (partnerAd.ad as? AppLovinAd)?.let {
             suspendCancellableCoroutine { continuation ->
                 val interstitialAd =
-                    AppLovinInterstitialAd.create(appLovinSdk, context)
+                    AppLovinInterstitialAd.create(appLovinSdk, activity)
 
                 interstitialAd.setAdDisplayListener(
                     object :
@@ -687,14 +688,14 @@ class AppLovinAdapter : PartnerAdapter {
     /**
      * Attempt to show an AppLovin rewarded ad.
      *
-     * @param context The current [Context].
+     * @param activity The current [Activity].
      * @param partnerAd The [PartnerAd] object containing the AppLovin ad to be shown.
      * @param partnerAdListener A [PartnerAdListener] to notify Chartboost Mediation of ad events.
      *
      * @return Result.success(PartnerAd) if the ad was successfully shown, Result.failure(Exception) otherwise.
      */
     private suspend fun showRewardedAd(
-        context: Context,
+        activity: Activity,
         partnerAd: PartnerAd,
         partnerAdListener: PartnerAdListener?,
     ): Result<PartnerAd> {
@@ -807,7 +808,7 @@ class AppLovinAdapter : PartnerAdapter {
 
             rewardedAd.show(
                 partnerAd.ad as AppLovinAd,
-                context,
+                activity,
                 rewardListener,
                 playbackListener,
                 displayListener,
