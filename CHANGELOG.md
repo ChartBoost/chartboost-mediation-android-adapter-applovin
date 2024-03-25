@@ -6,6 +6,9 @@ Adapters are compatible with any Chartboost Mediation SDK version within that ma
 ### 4.12.3.0.0
 - This version of the adapter has been certified with AppLovin SDK 12.3.0.
 
+### 4.12.2.0.0
+- This version of the adapter has been certified with AppLovin SDK 12.2.0.
+
 ### 4.12.1.0.1
 - This version of the adapter has been certified with AppLovin SDK 12.1.0 and performs initialization on `IO` to help reduce potential ANR issues.
 
