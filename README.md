@@ -13,7 +13,8 @@ The Chartboost Mediation AppLovin adapter mediates AppLovin via the Chartboost M
 
 In your `build.gradle`, add the following entry:
 ```
-    implementation "com.chartboost:chartboost-mediation-adapter-applovin:4.12.2.0.0"
+    implementation "com.chartboost:chartboost-mediation-adapter-applovin:4.12.3.0.0"
+
 ```
 
 ## Contributions
