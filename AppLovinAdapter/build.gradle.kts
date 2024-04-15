@@ -36,7 +36,6 @@ android {
         targetSdk = 33
         // If you touch the following line, don't forget to update scripts/get_rc_version.zsh
         android.defaultConfig.versionName = System.getenv("VERSION_OVERRIDE") ?: "4.12.6.0.0"
-
         buildConfigField("String", "CHARTBOOST_MEDIATION_APPLOVIN_ADAPTER_VERSION", "\"${android.defaultConfig.versionName}\"")
 
         consumerProguardFiles("proguard-rules.pro")
@@ -73,8 +72,12 @@ dependencies {
     "remoteImplementation"("com.chartboost:chartboost-mediation-sdk:4.0.0")
 
     // Partner SDK
+<<<<<<< HEAD
     implementation("com.applovin:applovin-sdk:12.6.0")
 
+=======
+    implementation("com.applovin:applovin-sdk:12.4.2")
+>>>>>>> 4a612e3 (v4.12.4.2.0 (#71))
 
     // Partner SDK Dependencies
     implementation("androidx.appcompat:appcompat:1.5.1")
