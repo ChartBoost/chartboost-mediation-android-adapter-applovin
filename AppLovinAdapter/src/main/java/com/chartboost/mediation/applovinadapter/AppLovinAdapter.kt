@@ -9,7 +9,6 @@ package com.chartboost.mediation.applovinadapter
 
 import android.app.Activity
 import android.content.Context
-import android.provider.Settings
 import android.util.Size
 import android.view.View.GONE
 import com.applovin.adview.*
@@ -17,10 +16,7 @@ import com.applovin.sdk.*
 import com.chartboost.chartboostmediationsdk.domain.*
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.*
-import com.google.android.gms.ads.identifier.AdvertisingIdClient
-import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -35,85 +31,13 @@ class AppLovinAdapter : PartnerAdapter {
          * The AppLovin SDK instance. Note: instances are SDK Key specific. This is set in [setUp].
          * Do NOT create other instances from your app.
          */
-        private var appLovinSdk: AppLovinSdk? = null
-
-        /**
-         * Enable/disable AppLovin's test mode. Remember to set this to false in production.
-         *
-         * @param context The current [Context].
-         * @param enabled True to enable test mode, false otherwise.
-         */
-        suspend fun setTestMode(
-            context: Context,
-            enabled: Boolean,
-        ) {
-            val adIds =
-                withContext(IO) {
-                    try {
-                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
-                    } catch (e: Exception) {
-                        context.contentResolver.let { resolver ->
-                            Settings.Secure.getString(resolver, "advertising_id")
-                        }
-                    }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
-                }
-
-            updateSdkSetting("test mode", enabled) {
-                settings.testDeviceAdvertisingIds = adIds
-            }
-        }
-
-        /**
-         * Enable/disable AppLovin's mute setting.
-         *
-         * @param muted True to mute video creatives, false otherwise.
-         */
-        fun setMuted(muted: Boolean) {
-            updateSdkSetting("mute setting", muted) {
-                settings.isMuted = muted
-            }
-        }
-
-        /**
-         * Enable/disable AppLovin's verbose logging.
-         *
-         * @param enabled True to enable verbose logging, false otherwise.
-         */
-        fun setVerboseLogging(enabled: Boolean) {
-            updateSdkSetting("verbose logging", enabled) {
-                settings.setVerboseLogging(enabled)
-            }
-        }
-
-        /**
-         * Enable/disable AppLovin's location sharing.
-         */
-        fun setLocationSharing(enabled: Boolean) {
-            updateSdkSetting("location sharing", enabled) {
-                settings.isLocationCollectionEnabled = enabled
-            }
-        }
-
-        /**
-         * Generic function to update AppLovin SDK settings and log the action.
-         *
-         * @param settingName The name of the setting being modified.
-         * @param enabled Whether the setting is enabled or not.
-         * @param action The action to perform on the AppLovin SDK.
-         */
-        private fun updateSdkSetting(
-            settingName: String,
-            enabled: Boolean,
-            action: AppLovinSdk.() -> Unit,
-        ) {
-            appLovinSdk?.let { sdk ->
-                sdk.action()
-
-                val status = if (enabled) "enabled" else "disabled"
-                PartnerLogController.log(CUSTOM, "AppLovin $settingName is $status.")
-            } ?: PartnerLogController.log(CUSTOM, "Unable to set $settingName. AppLovin SDK instance is null.")
-        }
+        internal var appLovinSdk: AppLovinSdk? = null
     }
+
+    /**
+     * The AppLovin adapter configuration.
+     */
+    override var configuration: PartnerAdapterConfiguration = AppLovinAdapterConfiguration
 
     /**
      * The AppLovin SDK needs a context for its privacy methods.
@@ -124,39 +48,6 @@ class AppLovinAdapter : PartnerAdapter {
      * A map of Chartboost Mediation's listeners for the corresponding load identifier.
      */
     private val listeners = mutableMapOf<String, PartnerAdListener>()
-
-    /**
-     * Get the AppLovin SDK version.
-     */
-    override val partnerSdkVersion: String
-        get() = AppLovinSdk.VERSION
-
-    /**
-     * Get the AppLovin adapter version.
-     *
-     * You may version the adapter using any preferred convention, but it is recommended to apply the
-     * following format if the adapter will be published by Chartboost Mediation:
-     *
-     * Chartboost Mediation.Partner.Adapter
-     *
-     * "Chartboost Mediation" represents the Chartboost Mediation SDK’s major version that is compatible with this adapter. This must be 1 digit.
-     * "Partner" represents the partner SDK’s major.minor.patch.x (where x is optional) version that is compatible with this adapter. This can be 3-4 digits.
-     * "Adapter" represents this adapter’s version (starting with 0), which resets to 0 when the partner SDK’s version changes. This must be 1 digit.
-     */
-    override val adapterVersion: String
-        get() = BuildConfig.CHARTBOOST_MEDIATION_APPLOVIN_ADAPTER_VERSION
-
-    /**
-     * Get the partner name for internal uses.
-     */
-    override val partnerId: String
-        get() = "applovin"
-
-    /**
-     * Get the partner name for external uses.
-     */
-    override val partnerDisplayName: String
-        get() = "AppLovin"
 
     /**
      * Initialize the AppLovin SDK so that it is ready to request ads.
@@ -196,7 +87,7 @@ class AppLovinAdapter : PartnerAdapter {
                             ).also { sdk ->
                                 sdk.initializeSdk {
                                     sdk.mediationProvider = "Chartboost"
-                                    sdk.setPluginVersion(adapterVersion)
+                                    sdk.setPluginVersion(configuration.adapterVersion)
                                     resumeOnce(
                                         Result.success(PartnerLogController.log(SETUP_SUCCEEDED)),
                                     )
