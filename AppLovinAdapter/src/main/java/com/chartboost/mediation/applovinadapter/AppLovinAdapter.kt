@@ -454,7 +454,7 @@ class AppLovinAdapter : PartnerAdapter {
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
                 resumeOnce(
-                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.InstanceNotFound)),
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.PartnerInstanceNotFound)),
                 )
             }
         }
@@ -512,7 +512,7 @@ class AppLovinAdapter : PartnerAdapter {
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
                 resumeOnce(
-                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.InstanceNotFound)),
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.PartnerInstanceNotFound)),
                 )
             }
         }
