@@ -98,7 +98,7 @@ class AppLovinAdapter : PartnerAdapter {
                 } ?: run {
                 PartnerLogController.log(SETUP_FAILED, "No SDK key found.")
                 resumeOnce(
-                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INITIALIZATION_FAILURE_INVALID_CREDENTIALS)),
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.InitializationError.InvalidCredentials)),
                 )
             }
         }
@@ -226,7 +226,7 @@ class AppLovinAdapter : PartnerAdapter {
                 )
             else -> {
                 PartnerLogController.log(LOAD_FAILED)
-                Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_UNSUPPORTED_AD_FORMAT))
+                Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.UnsupportedAdFormat))
             }
         }
     }
@@ -256,7 +256,7 @@ class AppLovinAdapter : PartnerAdapter {
             AdFormat.REWARDED.key -> showRewardedAd(activity, partnerAd, partnerAdListener)
             else -> {
                 PartnerLogController.log(SHOW_FAILED)
-                Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_UNSUPPORTED_AD_FORMAT))
+                Result.failure(ChartboostMediationAdException(ChartboostMediationError.ShowError.UnsupportedAdFormat))
             }
         }
     }
@@ -305,7 +305,7 @@ class AppLovinAdapter : PartnerAdapter {
             if (appLovinSdk == null) {
                 PartnerLogController.log(LOAD_FAILED)
                 resumeOnce(
-                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_NOT_INITIALIZED)),
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.PartnerNotInitialized)),
                 )
                 return@suspendCancellableCoroutine
             }
@@ -455,7 +455,7 @@ class AppLovinAdapter : PartnerAdapter {
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
                 resumeOnce(
-                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)),
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.PartnerInstanceNotFound)),
                 )
             }
         }
@@ -513,7 +513,7 @@ class AppLovinAdapter : PartnerAdapter {
             } ?: run {
                 PartnerLogController.log(LOAD_FAILED, "AppLovin SDK instance is null.")
                 resumeOnce(
-                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_LOAD_FAILURE_PARTNER_INSTANCE_NOT_FOUND)),
+                    Result.failure(ChartboostMediationAdException(ChartboostMediationError.LoadError.PartnerInstanceNotFound)),
                 )
             }
         }
@@ -571,7 +571,7 @@ class AppLovinAdapter : PartnerAdapter {
             }
         } ?: run {
             PartnerLogController.log(SHOW_FAILED, "Ad is null.")
-            Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_FOUND))
+            Result.failure(ChartboostMediationAdException(ChartboostMediationError.ShowError.AdNotFound))
         }
     }
 
@@ -706,7 +706,7 @@ class AppLovinAdapter : PartnerAdapter {
             )
         } ?: run {
             PartnerLogController.log(SHOW_FAILED, "Ad is null.")
-            Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_FOUND))
+            Result.failure(ChartboostMediationAdException(ChartboostMediationError.ShowError.AdNotFound))
         }
     }
 
@@ -727,11 +727,11 @@ class AppLovinAdapter : PartnerAdapter {
                 Result.success(partnerAd)
             } else {
                 PartnerLogController.log(INVALIDATE_FAILED, "Ad is not an AppLovinAdView.")
-                Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INVALIDATE_FAILURE_WRONG_RESOURCE_TYPE))
+                Result.failure(ChartboostMediationAdException(ChartboostMediationError.InvalidateError.WrongResourceType))
             }
         } ?: run {
             PartnerLogController.log(INVALIDATE_FAILED, "Ad is null.")
-            Result.failure(ChartboostMediationAdException(ChartboostMediationError.CM_INVALIDATE_FAILURE_AD_NOT_FOUND))
+            Result.failure(ChartboostMediationAdException(ChartboostMediationError.InvalidateError.WrongResourceType))
         }
     }
 
@@ -744,17 +744,17 @@ class AppLovinAdapter : PartnerAdapter {
      */
     private fun getChartboostMediationError(error: Int) =
         when (error) {
-            AppLovinErrorCodes.NO_FILL -> ChartboostMediationError.CM_LOAD_FAILURE_NO_FILL
-            AppLovinErrorCodes.NO_NETWORK -> ChartboostMediationError.CM_NO_CONNECTIVITY
-            AppLovinErrorCodes.SDK_DISABLED -> ChartboostMediationError.CM_INITIALIZATION_SKIPPED
+            AppLovinErrorCodes.NO_FILL -> ChartboostMediationError.LoadError.NoFill
+            AppLovinErrorCodes.NO_NETWORK -> ChartboostMediationError.OtherError.NoConnectivity
+            AppLovinErrorCodes.SDK_DISABLED -> ChartboostMediationError.InitializationError.Skipped
             // AppLovin is currently not part of programmatic bidding with Chartboost Mediation. Only waterfall.
-            AppLovinErrorCodes.INVALID_AD_TOKEN -> ChartboostMediationError.CM_LOAD_FAILURE_AUCTION_NO_BID
-            AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> ChartboostMediationError.CM_SHOW_FAILURE_UNKNOWN
-            AppLovinErrorCodes.FETCH_AD_TIMEOUT -> ChartboostMediationError.CM_LOAD_FAILURE_TIMEOUT
-            AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> ChartboostMediationError.CM_LOAD_FAILURE_OUT_OF_STORAGE
-            AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> ChartboostMediationError.CM_SHOW_FAILURE_AD_NOT_READY
-            AppLovinErrorCodes.INVALID_RESPONSE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_BID_RESPONSE
-            AppLovinErrorCodes.INVALID_ZONE -> ChartboostMediationError.CM_LOAD_FAILURE_INVALID_PARTNER_PLACEMENT
-            else -> ChartboostMediationError.CM_PARTNER_ERROR
+            AppLovinErrorCodes.INVALID_AD_TOKEN -> ChartboostMediationError.LoadError.AuctionNoBid
+            AppLovinErrorCodes.UNABLE_TO_RENDER_AD -> ChartboostMediationError.ShowError.Unknown
+            AppLovinErrorCodes.FETCH_AD_TIMEOUT -> ChartboostMediationError.LoadError.AdRequestTimeout
+            AppLovinErrorCodes.UNABLE_TO_PRECACHE_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_VIDEO_RESOURCES, AppLovinErrorCodes.UNABLE_TO_PRECACHE_IMAGE_RESOURCES -> ChartboostMediationError.LoadError.OutOfStorage
+            AppLovinErrorCodes.INCENTIVIZED_NO_AD_PRELOADED -> ChartboostMediationError.ShowError.AdNotReady
+            AppLovinErrorCodes.INVALID_RESPONSE -> ChartboostMediationError.LoadError.InvalidBidResponse
+            AppLovinErrorCodes.INVALID_ZONE -> ChartboostMediationError.LoadError.InvalidPartnerPlacement
+            else -> ChartboostMediationError.OtherError.PartnerError
         }
 }
