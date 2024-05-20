@@ -46,19 +46,19 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
      * @param enabled True to enable test mode, false otherwise.
      */
     suspend fun setTestMode(
-            context: Context,
-            enabled: Boolean,
+        context: Context,
+        enabled: Boolean,
     ) {
         val adIds =
-                withContext(Dispatchers.IO) {
-                    try {
-                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
-                    } catch (e: Exception) {
-                        context.contentResolver.let { resolver ->
-                            Settings.Secure.getString(resolver, "advertising_id")
-                        }
-                    }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
-                }
+            withContext(Dispatchers.IO) {
+                try {
+                    AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                } catch (e: Exception) {
+                    context.contentResolver.let { resolver ->
+                        Settings.Secure.getString(resolver, "advertising_id")
+                    }
+                }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
+            }
 
         updateSdkSetting("test mode", enabled) {
             settings.testDeviceAdvertisingIds = adIds
@@ -104,21 +104,21 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
      * @param action The action to perform on the AppLovin SDK.
      */
     private fun updateSdkSetting(
-            settingName: String,
-            enabled: Boolean,
-            action: AppLovinSdk.() -> Unit,
+        settingName: String,
+        enabled: Boolean,
+        action: AppLovinSdk.() -> Unit,
     ) {
         AppLovinAdapter.appLovinSdk?.let { sdk ->
             sdk.action()
 
             val status = if (enabled) "enabled" else "disabled"
             PartnerLogController.log(
-                    PartnerLogController.PartnerAdapterEvents.CUSTOM,
-                    "AppLovin $settingName is $status.",
+                PartnerLogController.PartnerAdapterEvents.CUSTOM,
+                "AppLovin $settingName is $status.",
             )
         } ?: PartnerLogController.log(
-                PartnerLogController.PartnerAdapterEvents.CUSTOM,
-                "Unable to set $settingName. AppLovin SDK instance is null.",
+            PartnerLogController.PartnerAdapterEvents.CUSTOM,
+            "Unable to set $settingName. AppLovin SDK instance is null.",
         )
     }
 }
