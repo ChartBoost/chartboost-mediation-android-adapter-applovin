@@ -15,7 +15,32 @@ import com.applovin.adview.*
 import com.applovin.sdk.*
 import com.chartboost.chartboostmediationsdk.domain.*
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController
-import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.*
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.BIDDER_INFO_FETCH_STARTED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.BIDDER_INFO_FETCH_SUCCEEDED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.CUSTOM
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.DID_CLICK
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.DID_DISMISS
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.DID_REWARD
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.GDPR_CONSENT_DENIED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.GDPR_CONSENT_GRANTED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.GDPR_CONSENT_UNKNOWN
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.INVALIDATE_FAILED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.INVALIDATE_STARTED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.INVALIDATE_SUCCEEDED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.LOAD_FAILED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.LOAD_STARTED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.LOAD_SUCCEEDED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SETUP_FAILED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SETUP_STARTED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SETUP_SUCCEEDED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SHOW_FAILED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SHOW_STARTED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SHOW_SUCCEEDED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USER_IS_NOT_UNDERAGE
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USER_IS_UNDERAGE
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USP_CONSENT_DENIED
+import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USP_CONSENT_GRANTED
+import com.chartboost.core.consent.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -60,11 +85,11 @@ class AppLovinAdapter : PartnerAdapter {
     override suspend fun setUp(
         context: Context,
         partnerConfiguration: PartnerConfiguration,
-    ): Result<Unit> {
+    ): Result<Map<String, Any>> {
         PartnerLogController.log(SETUP_STARTED)
 
         return suspendCancellableCoroutine { continuation ->
-            fun resumeOnce(result: Result<Unit>) {
+            fun resumeOnce(result: Result<Map<String, Any>>) {
                 if (continuation.isActive) {
                     continuation.resume(result)
                 }
@@ -88,8 +113,9 @@ class AppLovinAdapter : PartnerAdapter {
                                 sdk.initializeSdk {
                                     sdk.mediationProvider = "Chartboost"
                                     sdk.setPluginVersion(configuration.adapterVersion)
+                                    PartnerLogController.log(SETUP_SUCCEEDED)
                                     resumeOnce(
-                                        Result.success(PartnerLogController.log(SETUP_SUCCEEDED)),
+                                        Result.success(emptyMap()),
                                     )
                                 }
                             }
@@ -104,98 +130,41 @@ class AppLovinAdapter : PartnerAdapter {
     }
 
     /**
-     * Notify the AppLovin SDK of the GDPR applicability and consent status.
+     * Notify AppLovin if the user is underage.
      *
      * @param context The current [Context].
-     * @param applies True if GDPR applies, false otherwise.
-     * @param gdprConsentStatus The user's GDPR consent status.
+     * @param isUserUnderage True if the user is underage, false otherwise.
      */
-    override fun setGdpr(
+    override fun setIsUserUnderage(
         context: Context,
-        applies: Boolean?,
-        gdprConsentStatus: GdprConsentStatus,
+        isUserUnderage: Boolean,
     ) {
         PartnerLogController.log(
-            when (applies) {
-                true -> GDPR_APPLICABLE
-                false -> GDPR_NOT_APPLICABLE
-                else -> GDPR_UNKNOWN
-            },
-        )
-
-        PartnerLogController.log(
-            when (gdprConsentStatus) {
-                GdprConsentStatus.GDPR_CONSENT_UNKNOWN -> GDPR_CONSENT_UNKNOWN
-                GdprConsentStatus.GDPR_CONSENT_GRANTED -> GDPR_CONSENT_GRANTED
-                GdprConsentStatus.GDPR_CONSENT_DENIED -> GDPR_CONSENT_DENIED
-            },
-        )
-
-        // Setting GDPR applicability is a NO-OP because AppLovin does not have a corresponding API.
-
-        val userConsented = gdprConsentStatus == GdprConsentStatus.GDPR_CONSENT_GRANTED
-        AppLovinPrivacySettings.setHasUserConsent(userConsented, context)
-    }
-
-    /**
-     * Notify AppLovin of the CCPA compliance.
-     *
-     * @param context The current [Context].
-     * @param hasGrantedCcpaConsent True if the user has granted CCPA consent, false otherwise.
-     * @param privacyString The CCPA privacy String.
-     */
-    override fun setCcpaConsent(
-        context: Context,
-        hasGrantedCcpaConsent: Boolean,
-        privacyString: String,
-    ) {
-        PartnerLogController.log(
-            if (hasGrantedCcpaConsent) {
-                CCPA_CONSENT_GRANTED
+            if (isUserUnderage) {
+                USER_IS_UNDERAGE
             } else {
-                CCPA_CONSENT_DENIED
+                USER_IS_NOT_UNDERAGE
             },
         )
 
-        AppLovinPrivacySettings.setDoNotSell(!hasGrantedCcpaConsent, context)
-    }
-
-    /**
-     * Notify AppLovin of the COPPA subjectivity.
-     *
-     * @param context The current [Context].
-     * @param isSubjectToCoppa True if the user is subject to COPPA, false otherwise.
-     */
-    override fun setUserSubjectToCoppa(
-        context: Context,
-        isSubjectToCoppa: Boolean,
-    ) {
-        PartnerLogController.log(
-            if (isSubjectToCoppa) {
-                COPPA_SUBJECT
-            } else {
-                COPPA_NOT_SUBJECT
-            },
-        )
-
-        AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, context)
+        AppLovinPrivacySettings.setIsAgeRestrictedUser(isUserUnderage, context)
     }
 
     /**
      * Get a bid token if network bidding is supported.
      *
      * @param context The current [Context].
-     * @param request The [PreBidRequest] instance containing relevant data for the current bid request.
+     * @param request The [PartnerAdPreBidRequest] instance containing relevant data for the current bid request.
      *
      * @return A Map of biddable token Strings.
      */
     override suspend fun fetchBidderInformation(
         context: Context,
-        request: PreBidRequest,
-    ): Map<String, String> {
+        request: PartnerAdPreBidRequest,
+    ): Result<Map<String, String>> {
         PartnerLogController.log(BIDDER_INFO_FETCH_STARTED)
         PartnerLogController.log(BIDDER_INFO_FETCH_SUCCEEDED)
-        return emptyMap()
+        return Result.success(emptyMap())
     }
 
     /**
@@ -214,10 +183,10 @@ class AppLovinAdapter : PartnerAdapter {
     ): Result<PartnerAd> {
         PartnerLogController.log(LOAD_STARTED)
 
-        return when (request.format.key) {
-            AdFormat.INTERSTITIAL.key -> loadInterstitialAd(request, partnerAdListener)
-            AdFormat.REWARDED.key -> loadRewardedAd(request, partnerAdListener)
-            AdFormat.BANNER.key, "adaptive_banner" ->
+        return when (request.format) {
+            PartnerAdFormats.INTERSTITIAL -> loadInterstitialAd(request, partnerAdListener)
+            PartnerAdFormats.REWARDED -> loadRewardedAd(request, partnerAdListener)
+            PartnerAdFormats.BANNER ->
                 loadBannerAd(
                     context,
                     request,
@@ -245,14 +214,14 @@ class AppLovinAdapter : PartnerAdapter {
         PartnerLogController.log(SHOW_STARTED)
         val partnerAdListener = listeners.remove(partnerAd.request.identifier)
 
-        return when (partnerAd.request.format.key) {
+        return when (partnerAd.request.format) {
             // Banner ads don't have their own show.
-            AdFormat.BANNER.key, "adaptive_banner" -> {
+            PartnerAdFormats.BANNER -> {
                 PartnerLogController.log(SHOW_SUCCEEDED)
                 Result.success(partnerAd)
             }
-            AdFormat.INTERSTITIAL.key -> showInterstitialAd(activity, partnerAd, partnerAdListener)
-            AdFormat.REWARDED.key -> showRewardedAd(activity, partnerAd, partnerAdListener)
+            PartnerAdFormats.INTERSTITIAL -> showInterstitialAd(activity, partnerAd, partnerAdListener)
+            PartnerAdFormats.REWARDED -> showRewardedAd(activity, partnerAd, partnerAdListener)
             else -> {
                 PartnerLogController.log(SHOW_FAILED)
                 Result.failure(ChartboostMediationAdException(ChartboostMediationError.ShowError.UnsupportedAdFormat))
@@ -272,12 +241,45 @@ class AppLovinAdapter : PartnerAdapter {
         listeners.remove(partnerAd.request.identifier)
 
         // Only invalidate banners as there are no explicit methods to invalidate the other formats.
-        return when (partnerAd.request.format.key) {
-            AdFormat.BANNER.key, "adaptive_banner" -> destroyBannerAd(partnerAd)
+        return when (partnerAd.request.format) {
+            PartnerAdFormats.BANNER -> destroyBannerAd(partnerAd)
             else -> {
                 PartnerLogController.log(INVALIDATE_SUCCEEDED)
                 Result.success(partnerAd)
             }
+        }
+    }
+
+    override fun setConsents(
+        context: Context,
+        consents: Map<ConsentKey, ConsentValue>,
+        modifiedKeys: Set<ConsentKey>
+    ) {
+        consents[ConsentKeys.GDPR_CONSENT_GIVEN]?.let {
+            if (it == ConsentValues.DOES_NOT_APPLY) {
+                return@let
+            }
+            PartnerLogController.log(
+                when (it) {
+                    ConsentValues.GRANTED -> GDPR_CONSENT_GRANTED
+                    ConsentValues.DENIED -> GDPR_CONSENT_DENIED
+                    else -> GDPR_CONSENT_UNKNOWN
+                },
+            )
+            val userConsented = it == ConsentValues.GRANTED
+            AppLovinPrivacySettings.setHasUserConsent(userConsented, context)
+        }
+
+        consents[ConsentKeys.USP]?.let {
+            val hasGrantedUspConsent = ConsentManagementPlatform.getUspConsentFromUspString(it)
+            PartnerLogController.log(
+                if (hasGrantedUspConsent) {
+                    USP_CONSENT_GRANTED
+                } else {
+                    USP_CONSENT_DENIED
+                },
+            )
+            AppLovinPrivacySettings.setDoNotSell(!hasGrantedUspConsent, context)
         }
     }
 
@@ -311,7 +313,7 @@ class AppLovinAdapter : PartnerAdapter {
 
             AppLovinAdView(
                 appLovinSdk,
-                getAppLovinAdSize(request.size),
+                getAppLovinAdSize(request.bannerSize?.size),
                 request.partnerPlacement,
                 context,
             ).apply {
