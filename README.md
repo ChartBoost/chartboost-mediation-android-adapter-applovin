@@ -5,15 +5,15 @@ The Chartboost Mediation AppLovin adapter mediates AppLovin via the Chartboost M
 ## Minimum Requirements
 
 | Plugin                   | Version |
-| ------------------------ | ------- |
-| Chartboost Mediation SDK | 4.0.0+  |
+| ------------------------ |---------|
+| Chartboost Mediation SDK | 5.0.0+  |
 | Android API              | 21+     |
 
 ## Integration
 
 In your `build.gradle`, add the following entry:
 ```
-    implementation "com.chartboost:chartboost-mediation-adapter-applovin:4.12.6.0.0"
+    implementation "com.chartboost:chartboost-mediation-adapter-applovin:5.12.4.2.0"
 ```
 
 ## Contributions
