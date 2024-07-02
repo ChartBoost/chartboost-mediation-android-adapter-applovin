@@ -43,6 +43,12 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
     override val adapterVersion = BuildConfig.CHARTBOOST_MEDIATION_APPLOVIN_ADAPTER_VERSION
 
     /**
+     * Whether AppLovin is in test mode.
+     */
+    var testMode = false
+        private set
+
+    /**
      * Enable/disable AppLovin's test mode. Remember to set this to false in production.
      *
      * @param context The current [Context].
@@ -64,6 +70,7 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
                     }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
                 }
 
+            testMode = enabled
             updateSdkSetting("test mode", enabled) {
                 settings.testDeviceAdvertisingIds = adIds
             }
@@ -71,26 +78,28 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
     }
 
     /**
-     * Enable/disable AppLovin's mute setting.
-     *
-     * @param muted True to mute video creatives, false otherwise.
+     * Enable/disable AppLovin's mute setting. True to mute video creatives, false otherwise.
      */
-    fun setMuted(muted: Boolean) {
-        updateSdkSetting("mute setting", muted) {
-            settings.isMuted = muted
+    var isMuted = false
+        get() = AppLovinAdapter.appLovinSdk?.settings?.isMuted ?: field
+        set(value) {
+            updateSdkSetting("mute setting", value) {
+                settings.isMuted = value
+                field = value
+            }
         }
-    }
 
     /**
-     * Enable/disable AppLovin's verbose logging.
-     *
-     * @param enabled True to enable verbose logging, false otherwise.
+     * Enable/disable AppLovin's verbose logging. True to enable verbose logging, false otherwise.
      */
-    fun setVerboseLogging(enabled: Boolean) {
-        updateSdkSetting("verbose logging", enabled) {
-            settings.setVerboseLogging(enabled)
+    var isVerboseLoggingEnabled = false
+        get() = AppLovinAdapter.appLovinSdk?.settings?.isVerboseLoggingEnabled ?: field
+        set(value) {
+            updateSdkSetting("verbose logging", value) {
+                settings.setVerboseLogging(value)
+                field = value
+            }
         }
-    }
 
     /**
      * Generic function to update AppLovin SDK settings and log the action.
