@@ -11,8 +11,13 @@ import android.app.Activity
 import android.content.Context
 import android.util.Size
 import android.view.View.GONE
-import com.applovin.adview.*
+import com.applovin.adview.AppLovinAdView
+import com.applovin.adview.AppLovinAdViewDisplayErrorCode
+import com.applovin.adview.AppLovinAdViewEventListener
+import com.applovin.adview.AppLovinIncentivizedInterstitial
+import com.applovin.adview.AppLovinInterstitialAd
 import com.applovin.sdk.*
+import com.chartboost.chartboostmediationsdk.ad.ChartboostMediationBannerAdView.ChartboostMediationBannerSize.Companion.asSize
 import com.chartboost.chartboostmediationsdk.domain.*
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.BIDDER_INFO_FETCH_STARTED
@@ -40,14 +45,17 @@ import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerA
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USER_IS_UNDERAGE
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USP_CONSENT_DENIED
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USP_CONSENT_GRANTED
-import com.chartboost.core.consent.*
+import com.chartboost.core.consent.ConsentKey
+import com.chartboost.core.consent.ConsentKeys
+import com.chartboost.core.consent.ConsentManagementPlatform
+import com.chartboost.core.consent.ConsentValue
+import com.chartboost.core.consent.ConsentValues
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
-import java.lang.Deprecated
 import kotlin.coroutines.resume
 
 /**
@@ -322,7 +330,7 @@ class AppLovinAdapter : PartnerAdapter {
 
             AppLovinAdView(
                 appLovinSdk,
-                getAppLovinAdSize(request.bannerSize?.size),
+                getAppLovinAdSize(request.bannerSize?.asSize()),
                 request.partnerPlacement,
                 context,
             ).apply {
