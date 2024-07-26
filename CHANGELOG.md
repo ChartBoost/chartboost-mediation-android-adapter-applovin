@@ -3,6 +3,10 @@
 Note the first digit of every adapter version corresponds to the major version of the Chartboost Mediation SDK compatible with that adapter. 
 Adapters are compatible with any Chartboost Mediation SDK version within that major version.
 
+### 4.12.6.0.0
+- This version of the adapter has been certified with AppLovin SDK 12.6.0.
+- Deprecated `AppLovinAdapter.setLocationSharing`.
+
 ### 4.12.5.0.0
 - This version of the adapter has been certified with AppLovin SDK 12.5.0.
 

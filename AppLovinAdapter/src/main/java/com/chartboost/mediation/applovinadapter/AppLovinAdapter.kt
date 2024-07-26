@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
+import java.lang.Deprecated
 import kotlin.coroutines.resume
 
 /**
@@ -86,11 +87,12 @@ class AppLovinAdapter : PartnerAdapter {
 
         /**
          * Enable/disable AppLovin's location sharing.
+         * This property no longer does anything. `AppLovinSdkSettings.isLocationCollectionEnabled`
+         * no longer exists starting in SDK version `12.6.0`.
+         * @deprecated
          */
+        @Deprecated
         fun setLocationSharing(enabled: Boolean) {
-            updateSdkSetting("location sharing", enabled) {
-                settings.isLocationCollectionEnabled = enabled
-            }
         }
 
         /**
