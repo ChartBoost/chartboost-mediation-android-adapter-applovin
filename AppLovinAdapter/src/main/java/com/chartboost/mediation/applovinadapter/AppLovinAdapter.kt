@@ -272,6 +272,7 @@ class AppLovinAdapter : PartnerAdapter {
 
     /**
      * Notify AppLovin of the COPPA subjectivity.
+     * Note: COPPA is no longer supported in the AppLovin SDK, starting in 13.0.0
      *
      * @param context The current [Context].
      * @param isSubjectToCoppa True if the user is subject to COPPA, false otherwise.
@@ -280,15 +281,6 @@ class AppLovinAdapter : PartnerAdapter {
         context: Context,
         isSubjectToCoppa: Boolean,
     ) {
-        PartnerLogController.log(
-            if (isSubjectToCoppa) {
-                COPPA_SUBJECT
-            } else {
-                COPPA_NOT_SUBJECT
-            },
-        )
-
-        AppLovinPrivacySettings.setIsAgeRestrictedUser(isSubjectToCoppa, context)
     }
 
     /**
