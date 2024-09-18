@@ -142,6 +142,7 @@ class AppLovinAdapter : PartnerAdapter {
 
     /**
      * Notify AppLovin if the user is underage.
+     * Note: COPPA is no longer supported in the AppLovin SDK 13.0.0
      *
      * @param context The current [Context].
      * @param isUserUnderage True if the user is underage, false otherwise.
@@ -150,15 +151,7 @@ class AppLovinAdapter : PartnerAdapter {
         context: Context,
         isUserUnderage: Boolean,
     ) {
-        PartnerLogController.log(
-            if (isUserUnderage) {
-                USER_IS_UNDERAGE
-            } else {
-                USER_IS_NOT_UNDERAGE
-            },
-        )
-
-        AppLovinPrivacySettings.setIsAgeRestrictedUser(isUserUnderage, context)
+        PartnerLogController.log(CUSTOM, "COPPA is not supported with AppLovin")
     }
 
     /**
