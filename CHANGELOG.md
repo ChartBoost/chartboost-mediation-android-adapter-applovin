@@ -1,25 +1,33 @@
-## Changelog
+# Changelog
 
 Note the first digit of every adapter version corresponds to the major version of the Chartboost Mediation SDK compatible with that adapter. 
 Adapters are compatible with any Chartboost Mediation SDK version within that major version.
 
 All official releases can be found on this repository's [releases page](https://github.com/ChartBoost/chartboost-mediation-android-adapter-applovin/releases).
 
-### 5.13.0.0.0
-- This version of the adapter has been certified with AppLovin SDK 13.0.0.
+## Table of Contents
+- [Mediation 5](#mediation-5)
+- [Mediation 4](#mediation-4)
 
-### 4.13.0.0.0
+## Mediation 5
+
+### 5.13.0.0.0
 - This version of the adapter has been certified with AppLovin SDK 13.0.0.
 
 ### 5.12.6.1.0
 - This version of the adapter has been certified with AppLovin SDK 12.6.1.
 
-### 4.12.6.1.0
-- This version of the adapter has been certified with AppLovin SDK 12.6.1.
-
 ### 5.12.6.0.0
 - This version of the adapter has been certified with AppLovin SDK 12.6.0.
 - This version of the adapter supports Chartboost Mediation SDK version 5.+.
+
+## Mediation 4
+
+### 4.13.0.0.0
+- This version of the adapter has been certified with AppLovin SDK 13.0.0.
+
+### 4.12.6.1.0
+- This version of the adapter has been certified with AppLovin SDK 12.6.1.
 
 ### 4.12.6.0.0
 - This version of the adapter has been certified with AppLovin SDK 12.6.0.
