@@ -36,11 +36,11 @@ repositories {
 
 android {
     namespace = "com.chartboost.mediation.applovinadapter"
-    compileSdk = 34
+    compileSdk = 33
 
     defaultConfig {
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 33
         // If you touch the following line, don't forget to update scripts/get_rc_version.zsh
         android.defaultConfig.versionName = System.getenv("VERSION_OVERRIDE") ?: "5.12.6.1.0"
         buildConfigField("String", "CHARTBOOST_MEDIATION_APPLOVIN_ADAPTER_VERSION", "\"${android.defaultConfig.versionName}\"")
@@ -91,10 +91,10 @@ dependencies {
     "candidateImplementation"("com.chartboost:chartboost-mediation-sdk:5.0.0")
 
     // Partner SDK
-    implementation("com.applovin:applovin-sdk:12.6.1")
+    implementation("com.applovin:applovin-sdk:11.11.3")
 
     // Partner SDK Dependencies
-    implementation("androidx.appcompat:appcompat:1.5.1")
+    implementation("androidx.appcompat:appcompat:1.4.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 }
