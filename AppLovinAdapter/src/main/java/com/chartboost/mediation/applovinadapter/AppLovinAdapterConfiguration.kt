@@ -59,17 +59,6 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
         enabled: Boolean,
     ) {
         CoroutineScope(Main).launch {
-            val adIds =
-                withContext(Dispatchers.IO) {
-                    try {
-                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
-                    } catch (e: Exception) {
-                        context.contentResolver.let { resolver ->
-                            Settings.Secure.getString(resolver, "advertising_id")
-                        }
-                    }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
-                }
-
             // Set `testMode`. This will be used during adapter `setUp`; AppLovin
             // requires test identifiers to be set during SDK initialization.
             testMode = enabled
