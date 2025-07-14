@@ -70,10 +70,15 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
                     }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
                 }
 
+            // Set `testMode`. This will be used during adapter `setUp`; AppLovin
+            // requires test identifiers to be set during SDK initialization.
             testMode = enabled
-            updateSdkSetting("test mode", enabled) {
-                settings.testDeviceAdvertisingIds = adIds
-            }
+
+            val status = if (enabled) "enabled" else "disabled"
+            PartnerLogController.log(
+                PartnerLogController.PartnerAdapterEvents.CUSTOM,
+                "AppLovin test mode is $status.",
+            )
         }
     }
 
