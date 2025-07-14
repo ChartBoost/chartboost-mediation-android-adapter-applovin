@@ -1,16 +1,12 @@
 package com.chartboost.mediation.applovinadapter
 
 import android.content.Context
-import android.provider.Settings
 import com.applovin.sdk.AppLovinSdk
 import com.chartboost.chartboostmediationsdk.domain.PartnerAdapterConfiguration
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController
-import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
     /**
