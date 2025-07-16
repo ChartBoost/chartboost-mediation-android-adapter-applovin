@@ -1,16 +1,12 @@
 package com.chartboost.mediation.applovinadapter
 
 import android.content.Context
-import android.provider.Settings
 import com.applovin.sdk.AppLovinSdk
 import com.chartboost.chartboostmediationsdk.domain.PartnerAdapterConfiguration
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController
-import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
     /**
@@ -59,21 +55,15 @@ object AppLovinAdapterConfiguration : PartnerAdapterConfiguration {
         enabled: Boolean,
     ) {
         CoroutineScope(Main).launch {
-            val adIds =
-                withContext(Dispatchers.IO) {
-                    try {
-                        AdvertisingIdClient.getAdvertisingIdInfo(context).id
-                    } catch (e: Exception) {
-                        context.contentResolver.let { resolver ->
-                            Settings.Secure.getString(resolver, "advertising_id")
-                        }
-                    }?.takeIf { enabled }?.let { listOf(it) } ?: emptyList()
-                }
-
+            // Set `testMode`. This will be used during adapter `setUp`; AppLovin
+            // requires test identifiers to be set during SDK initialization.
             testMode = enabled
-            updateSdkSetting("test mode", enabled) {
-                settings.testDeviceAdvertisingIds = adIds
-            }
+
+            val status = if (enabled) "enabled" else "disabled"
+            PartnerLogController.log(
+                PartnerLogController.PartnerAdapterEvents.CUSTOM,
+                "AppLovin test mode is $status.",
+            )
         }
     }
 
