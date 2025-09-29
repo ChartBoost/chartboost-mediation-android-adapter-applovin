@@ -9,6 +9,7 @@ package com.chartboost.mediation.applovinadapter
 
 import android.app.Activity
 import android.content.Context
+import android.provider.Settings
 import android.util.Size
 import android.view.View.GONE
 import com.applovin.adview.AppLovinAdView
@@ -41,8 +42,6 @@ import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerA
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SHOW_FAILED
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SHOW_STARTED
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.SHOW_SUCCEEDED
-import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USER_IS_NOT_UNDERAGE
-import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USER_IS_UNDERAGE
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USP_CONSENT_DENIED
 import com.chartboost.chartboostmediationsdk.utils.PartnerLogController.PartnerAdapterEvents.USP_CONSENT_GRANTED
 import com.chartboost.core.consent.ConsentKey
@@ -50,6 +49,7 @@ import com.chartboost.core.consent.ConsentKeys
 import com.chartboost.core.consent.ConsentManagementPlatform
 import com.chartboost.core.consent.ConsentValue
 import com.chartboost.core.consent.ConsentValues
+import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -115,21 +115,34 @@ class AppLovinAdapter : PartnerAdapter {
                         // Save the application context for later usage.
                         appContext = it
 
-                        appLovinSdk =
-                            AppLovinSdk.getInstance(
-                                sdkKey,
-                                AppLovinSdkSettings(it),
-                                it,
-                            ).also { sdk ->
-                                sdk.initializeSdk {
-                                    sdk.mediationProvider = "Chartboost"
-                                    sdk.setPluginVersion(configuration.adapterVersion)
-                                    PartnerLogController.log(SETUP_SUCCEEDED)
-                                    resumeOnce(
-                                        Result.success(emptyMap()),
-                                    )
+                        // Generate list of test device advertising IDs
+                        val adIds =
+                            try {
+                                AdvertisingIdClient.getAdvertisingIdInfo(context).id
+                            } catch (e: Exception) {
+                                context.contentResolver.let { resolver ->
+                                    Settings.Secure.getString(resolver, "advertising_id")
                                 }
-                            }
+                            }?.takeIf { (configuration as AppLovinAdapterConfiguration).testMode }?.let { listOf(it) } ?: emptyList()
+
+                        // Build the configuration
+                        val appLovinConfiguration = AppLovinSdkInitializationConfiguration.builder(sdkKey)
+                            .setMediationProvider("Chartboost")
+                            .setPluginVersion(configuration.adapterVersion)
+                            .setTestDeviceAdvertisingIds(adIds)
+                            .build()
+
+                        // Get the SDK instance.
+                        val appLovinSdk = AppLovinSdk.getInstance(context)
+                        AppLovinAdapter.appLovinSdk = appLovinSdk
+
+                        // Finally initialize it.
+                        appLovinSdk.initialize(appLovinConfiguration) {
+                            PartnerLogController.log(SETUP_SUCCEEDED)
+                            resumeOnce(
+                                Result.success(emptyMap()),
+                            )
+                        }
                     }
                 } ?: run {
                 PartnerLogController.log(SETUP_FAILED, "No SDK key found.")
