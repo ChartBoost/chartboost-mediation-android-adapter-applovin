@@ -42,7 +42,7 @@ android {
         minSdk = 21
         targetSdk = 34
         // If you touch the following line, don't forget to update scripts/get_rc_version.zsh
-        android.defaultConfig.versionName = System.getenv("VERSION_OVERRIDE") ?: "5.13.3.1.0"
+        android.defaultConfig.versionName = System.getenv("VERSION_OVERRIDE") ?: "5.13.4.0.0"
         buildConfigField("String", "CHARTBOOST_MEDIATION_APPLOVIN_ADAPTER_VERSION", "\"${android.defaultConfig.versionName}\"")
 
         consumerProguardFiles("proguard-rules.pro")
@@ -91,7 +91,7 @@ dependencies {
     "candidateImplementation"("com.chartboost:chartboost-mediation-sdk:5.0.0")
 
     // Partner SDK
-    implementation("com.applovin:applovin-sdk:13.3.1")
+    implementation("com.applovin:applovin-sdk:13.4.0")
 
     // Partner SDK Dependencies
     implementation("androidx.appcompat:appcompat:1.5.1")
